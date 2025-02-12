@@ -1,22 +1,20 @@
 provider "google" {
-  project = "your-gcp-project-id"
-  region  = "asia-northeast1"
+  project = "raimei-450611"
+  region  = "us-central1"
 }
 
 resource "google_cloud_run_service" "raimei" {
   name     = "raimei-service"
-  location = "asia-northeast1"
+  location = "us-central1"
+
+  autogenerate_revision_name = true  # 追加
 
   template {
     spec {
       containers {
-        image = "gcr.io/your-gcp-project-id/raimei:latest"
+        image = "gcr.io/raimei-450611/raimei:latest"
         ports {
           container_port = 8000
-        }
-        env {
-          name  = "GITHUB_APP_SECRET"
-          value = var.github_app_secret
         }
         env {
           name  = "GEMINI_API_KEY"
@@ -26,7 +24,7 @@ resource "google_cloud_run_service" "raimei" {
     }
   }
 
-  traffics {
+  traffic {
     percent         = 100
     latest_revision = true
   }
@@ -39,5 +37,4 @@ resource "google_cloud_run_service_iam_member" "raimei_invoker" {
   member   = "allUsers"
 }
 
-variable "github_app_secret" {}
 variable "gemini_api_key" {}

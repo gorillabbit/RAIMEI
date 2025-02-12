@@ -99,3 +99,17 @@ Gemini の API キーやエンドポイントを設定。 9. 今後の展望
 コミュニティの構築
 
 オープンソース化やコミュニティの形成を検討し、共同開発を促進。
+
+# ビルド手順
+
+dockerfile のビルド
+
+```sh
+cd app
+uv pip compile pyproject.toml > requirements.txt
+
+cd ..
+gcloud auth configure-docker
+docker build -t gcr.io/raimei-450611/raimei:latest .
+docker push gcr.io/raimei-450611/raimei:latest
+```
