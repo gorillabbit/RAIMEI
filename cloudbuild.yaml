@@ -13,6 +13,7 @@ steps:
           - 'gcr.io/$PROJECT_ID/app'
     # 3. Cloud Run へのデプロイ
     - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+      secretEnv: ['GITHUB_WEBHOOK_SECRET']
       entrypoint: 'bash'
       args:
           - '-c'
