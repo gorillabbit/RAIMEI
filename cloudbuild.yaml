@@ -20,7 +20,7 @@ steps:
           - |
               gcloud run deploy app \
                 --image gcr.io/$PROJECT_ID/app \
-                --region asia-northeast1 \
+                --region $LOCATION \
                 --platform managed \
                 --allow-unauthenticated \
                 --timeout 600
