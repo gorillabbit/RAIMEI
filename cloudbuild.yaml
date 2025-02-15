@@ -16,7 +16,7 @@ images:
 
 availableSecrets:
     secretManager:
-        - versionName: 'projects/661241735961/secrets/GITHUB_WEBHOOK_SECRET/versions/1'
+        - versionName: 'projects/$PROJECT_NUMBER/secrets/GITHUB_WEBHOOK_SECRET/versions/1'
           env: 'GITHUB_WEBHOOK_SECRET'
 
 options:
