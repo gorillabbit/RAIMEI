@@ -1,7 +1,6 @@
 steps:
     - name: 'gcr.io/cloud-builders/docker'
       # Secret Manager から注入する環境変数名を指定
-      secretEnv: ['GITHUB_WEBHOOK_SECRET']
       args:
           - build
           - '-t'
@@ -14,6 +13,7 @@ steps:
           - 'gcr.io/$PROJECT_ID/app'
     # 3. Cloud Run へのデプロイ
     - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+      secretEnv: ['GITHUB_WEBHOOK_SECRET']
       entrypoint: 'bash'
       args:
           - '-c'
