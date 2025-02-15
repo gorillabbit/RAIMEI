@@ -1,0 +1,7 @@
+{
+	"action": "opened",
+	"issue": {
+		"title": "テストIssue",
+		"body": "これはテスト用のIssueです。"
+	}
+}

@@ -1,0 +1,20 @@
+steps:
+    - name: 'gcr.io/cloud-builders/docker'
+      # Secret Manager から注入する環境変数名を指定
+      secretEnv: ['GITHUB_WEBHOOK_SECRET']
+      args:
+          - build
+          # Dockerfile の ARG に値を渡すため、--build-arg を指定
+          - '--build-arg'
+          - 'GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}'
+          - '-t'
+          - 'gcr.io/$PROJECT_ID/app'
+          - '.'
+
+images:
+    - 'gcr.io/$PROJECT_ID/app'
+
+availableSecrets:
+    secretManager:
+        - versionName: 'projects/$PROJECT_ID/secrets/GITHUB_WEBHOOK_SECRET/versions/latest'
+          env: 'GITHUB_WEBHOOK_SECRET'

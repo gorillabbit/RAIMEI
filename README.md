@@ -105,11 +105,21 @@ Gemini の API キーやエンドポイントを設定。 9. 今後の展望
 dockerfile のビルド
 
 ```sh
-cd app
-uv pip compile pyproject.toml > requirements.txt
-
-cd ..
+uv pip compile app/pyproject.toml > app/requirements.txt
 gcloud auth configure-docker
-docker build -t gcr.io/raimei-450611/raimei:latest .
+
+docker compose --env-file .env.production up --build
+
+docker build --no-cache -t gcr.io/raimei-450611/raimei:latest . && docker run -e ENV=production -p 8000:8000 gcr.io/raimei-450611/raimei:latest
 docker push gcr.io/raimei-450611/raimei:latest
+
+# 確認
+test/test.sh
+curl -X POST "http://0.0.0.0:8000/webhook"
+curl -X POST https://raimei-service-661241735961.us-central1.run.app/webhook -d '{"test": "value"}' -H "Content-Type: application/json"
+
+# dockerに入る
+sudo docker ps
+docker images
+sudo docker exec -it raimei bash
 ```
