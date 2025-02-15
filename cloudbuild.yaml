@@ -12,6 +12,19 @@ steps:
       args:
           - push
           - 'gcr.io/$PROJECT_ID/app'
+    # 3. Cloud Run へのデプロイ
+    - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+      entrypoint: 'bash'
+      args:
+          - '-c'
+          - |
+              gcloud run deploy app \
+                --image gcr.io/$PROJECT_ID/app \
+                --region asia-northeast1 \
+                --platform managed \
+                --allow-unauthenticated \
+                --update-env-var GITHUB_WEBHOOK_SECRET=$GITHUB_WEBHOOK_SECRET \
+                --timeout 600
 images:
     - 'gcr.io/$PROJECT_ID/app'
 
