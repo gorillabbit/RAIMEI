@@ -7,7 +7,11 @@ steps:
           - '-t'
           - 'gcr.io/$PROJECT_ID/app'
           - '.'
-
+    # ビルドしたイメージの push
+    - name: 'gcr.io/cloud-builders/docker'
+      args:
+          - push
+          - 'gcr.io/$PROJECT_ID/app'
 images:
     - 'gcr.io/$PROJECT_ID/app'
 
