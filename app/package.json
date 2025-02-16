@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

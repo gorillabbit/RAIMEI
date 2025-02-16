@@ -1,39 +1,19 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
+
 build/
 dist/
 wheels/
 *.egg-info
 
-# Virtual environments
-.venv
 
+.env
 .env.development
 .env.production
 *.pem
 メモ.md
 
-# ローカルの .terraform ディレクトリ
-**/.terraform/*
-
-# .tfstate ファイル
-*.tfstate
-*.tfstate.*
 
 # クラッシュログファイル
 crash.log
 crash.*.log
 
-# 機密情報を含む可能性のある .tfvars ファイル
-*.tfvars
-*.tfvars.json
-
-# オーバーライドファイル
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-
-# ロック情報ファイル
-.terraform.tfstate.lock.info
+node_modules/

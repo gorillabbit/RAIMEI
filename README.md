@@ -122,4 +122,15 @@ curl -X POST https://raimei-service-661241735961.us-central1.run.app/webhook -d 
 sudo docker ps
 docker images
 sudo docker exec -it raimei bash
+
+# terraformで出力する
+PROJECT_ID=raimei-450611
+REGION=us-central1
+echo $PROJECT_ID $REGION
+terraformer import google --projects=$PROJECT_ID --regions=$REGION
+terraformer import google --resources="*" --projects=$PROJECT_ID --regions=$REGION
+terraformer import google --compact --resources=cloudbuild --projects=$PROJECT_ID  --regions=$REGION
+
+# tailscaleでサーバーを起動する
+sudo tailscale funnel 8000
 ```
