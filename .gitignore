@@ -1,6 +1,8 @@
 
 build/
+cline-cli/build/
 dist/
+node_modules/
 wheels/
 *.egg-info
 
@@ -16,4 +18,12 @@ wheels/
 crash.log
 crash.*.log
 
-node_modules/
+tmp
+.vscode-test/
+*.vsix
+
+.DS_Store
+
+pnpm-lock.yaml
+
+database.sqlite
