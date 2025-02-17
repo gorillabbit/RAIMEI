@@ -20,7 +20,7 @@ const defaultThemes: Record<string, string> = {
 	"Visual Studio Light": "light_vs",
 }
 
-function parseThemeString(themeString: string | undefined): any {
+function parseThemeString(themeString: string | undefined) {
 	themeString = themeString
 		?.split("\n")
 		.filter((line) => {
@@ -75,7 +75,7 @@ export async function getTheme() {
 
 		converted.base = (
 			["vs", "hc-black"].includes(converted.base) ? converted.base : colorTheme.includes("Light") ? "vs" : "vs-dark"
-		) as any
+		) as unknown
 
 		return converted
 	} catch (e) {
@@ -84,18 +84,18 @@ export async function getTheme() {
 	return undefined
 }
 
-type JsonObject = { [key: string]: any }
+type JsonObject = { [key: string]: unknown }
 export function mergeJson(
 	first: JsonObject,
 	second: JsonObject,
 	mergeBehavior?: "merge" | "overwrite",
-	mergeKeys?: { [key: string]: (a: any, b: any) => boolean },
-): any {
+	mergeKeys?: { [key: string]: (a: unknown, b: unknown) => boolean },
+): unknown {
 	const copyOfFirst = JSON.parse(JSON.stringify(first))
 
 	try {
 		for (const key in second) {
-			const secondValue = second[key]
+			const secondValue = second[key] as JsonObject
 
 			if (!(key in copyOfFirst) || mergeBehavior === "overwrite") {
 				// New value
@@ -108,9 +108,9 @@ export function mergeJson(
 				// Array
 				if (mergeKeys?.[key]) {
 					// Merge keys are used to determine whether an item form the second object should override one from the first
-					const keptFromFirst: any[] = []
-					firstValue.forEach((item: any) => {
-						if (!secondValue.some((item2: any) => mergeKeys[key](item, item2))) {
+					const keptFromFirst: unknown[] = []
+					firstValue.forEach((item: unknown) => {
+						if (!secondValue.some((item2: unknown) => mergeKeys[key](item, item2))) {
 							keptFromFirst.push(item)
 						}
 					})

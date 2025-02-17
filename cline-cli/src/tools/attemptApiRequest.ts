@@ -2,7 +2,6 @@ import delay from "delay";
 import path from "path";
 import fs from "fs/promises";
 import { serializeError } from "serialize-error";
-import { cwd } from "process";
 import { OpenRouterHandler } from "../api/providers/openrouter.js";
 import { OpenAiHandler } from "../api/providers/openai.js";
 import { ask } from "../chat.js";
@@ -22,12 +21,11 @@ import { Ask, Say } from "../database.js";
  * APIリクエスト用のシステムプロンプトを構築する
  */
 async function buildSystemPrompt(): Promise<string> {
-  const apiHandler = buildApiHandler(apiStateManager.getState());
   const state = globalStateManager.state;
   if (!state.workspaceFolder) {
     throw new Error("Workspace folder not set");
   }
-  let prompt = await SYSTEM_PROMPT(state.workspaceFolder, apiHandler.getModel().info.supportsComputerUse ?? false);
+  let prompt = await SYSTEM_PROMPT(state.workspaceFolder);
   
   // ユーザー固有の設定
   const customInstructions = state.customInstructions?.trim();
@@ -113,7 +111,7 @@ async function trimHistoryIfNeeded(previousApiReqIndex: number): Promise<void> {
  */
 export async function* attemptApiRequest(
   previousApiReqIndex: number
-): AsyncGenerator<any, void, unknown> {
+): AsyncGenerator<unknown, void, unknown> {
   const state = globalStateManager.state;
   const apiHandler = buildApiHandler(apiStateManager.getState());
 

@@ -33,7 +33,7 @@
 		"watch-tests": "tsc -p . -w --outDir out",
 		"pretest": "npm run compile-tests && npm run compile && npm run lint",
 		"check-types": "tsc --noEmit",
-		"lint": "eslint src --ext ts",
+		"lint": "eslint src",
 		"format": "prettier . --check",
 		"format:fix": "prettier . --write",
 		"prepare": "husky",
@@ -41,6 +41,7 @@
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.27.12",
+		"@eslint/js": "^9.20.0",
 		"@types/chai": "^5.0.1",
 		"@types/diff": "^5.2.1",
 		"@types/mocha": "^10.0.7",
@@ -54,12 +55,14 @@
 		"@vscode/test-cli": "^0.0.9",
 		"@vscode/test-electron": "^2.4.0",
 		"esbuild": "^0.21.5",
-		"eslint": "^8.57.0",
+		"eslint": "^8.57.1",
+		"globals": "^15.15.0",
 		"husky": "^9.1.7",
 		"prettier": "^3.3.3",
 		"should": "^13.2.3",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.4.5"
+		"typescript": "^5.4.5",
+		"typescript-eslint": "^8.24.0"
 	},
 	"dependencies": {
 		"@anthropic-ai/bedrock-sdk": "^0.10.2",

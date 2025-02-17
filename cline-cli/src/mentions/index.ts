@@ -41,7 +41,7 @@ export async function parseMentions(text: string, cwd: string): Promise<string> 
 	})
 
 	for (const mention of mentions) {
-		if (mention.startsWith("http")) {} else if (mention.startsWith("/")) {
+		if (mention.startsWith("http")) { /* empty */ } else if (mention.startsWith("/")) {
 			const mentionPath = mention.slice(1)
 			try {
 				const content = await getFileOrFolderContent(mentionPath, cwd)
@@ -104,7 +104,7 @@ async function getFileOrFolderContent(mentionPath: string, cwd: string): Promise
 								}
 								const content = await extractTextFromFile(absoluteFilePath)
 								return `<file_content path="${filePath.toPosix()}">\n${content}\n</file_content>`
-							} catch (error) {
+							} catch {
 								return undefined
 							}
 						})(),

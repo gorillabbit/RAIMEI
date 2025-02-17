@@ -8,10 +8,10 @@ import Anthropic from "@anthropic-ai/sdk";
 
 export interface GlobalState {
   clineMessages: ClineMessage[];
-  apiConversationHistory: any[];
+  apiConversationHistory: Anthropic.Messages.MessageParam[];
   taskId: string;
   taskDir: string;
-  conversationHistoryDeletedRange?: any;
+  conversationHistoryDeletedRange?: [number, number];
   lastMessageTs?: number;
   askResponse?: ClineAskResponse
 	askResponseText?: string

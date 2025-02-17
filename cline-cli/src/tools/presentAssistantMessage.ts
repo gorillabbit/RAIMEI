@@ -119,7 +119,7 @@ export const presentAssistantMessage = async () => {
             await say(Say.TEXT, content, undefined, block.partial)
             break
         }
-        case "tool_use":
+        case "tool_use": {
             console.log("Processing tool_use block:", block.name);
             // ツールごとの説明を生成する関数
             const toolDescription = () => {
@@ -226,7 +226,7 @@ export const presentAssistantMessage = async () => {
                     return ""
                 }
                 const tagRegex = new RegExp(
-                    `\\s?<\/?${tag
+                    `\\s?</?${tag
                         .split("")
                         .map((char) => `(?:${char})?`)
                         .join("")}$`,
@@ -240,8 +240,8 @@ export const presentAssistantMessage = async () => {
                 case "write_to_file":
                 case "replace_in_file": {
                     const relPath: string | undefined = block.params.path
-                    let content: string | undefined = block.params.content // write_to_file用
-                    let diff: string | undefined = block.params.diff // replace_in_file用
+                    const content: string | undefined = block.params.content // write_to_file用
+                    const diff: string | undefined = block.params.diff // replace_in_file用
                     if (!relPath || (!content && !diff)) {
                         console.log("必要なパラメータが不足しているため、ツール処理を中断します。")
                         break
@@ -314,7 +314,7 @@ export const presentAssistantMessage = async () => {
                                 await genericDiffProvider.open(relPath)
                             }
                             // editor is open, stream content in
-                            await genericDiffProvider.update(newContent, false)
+                            await genericDiffProvider.update(newContent)
                             break
                         } else {
                             if (!relPath) {
@@ -342,7 +342,7 @@ export const presentAssistantMessage = async () => {
                                 await ask(Ask.TOOL, partialMessage, true).catch(() => {}) // sending true for partial even though it's not a partial, this shows the edit row before the content is streamed into the editor
                                 await genericDiffProvider.open(relPath) // updated to use genericDiffProvider
                             }
-                            await genericDiffProvider.update(newContent, true) // updated to use genericDiffProvider
+                            await genericDiffProvider.update(newContent) // updated to use genericDiffProvider
 
                             const completeMessage = JSON.stringify({
                                 ...sharedMessageProps,
@@ -740,6 +740,7 @@ export const presentAssistantMessage = async () => {
                 }
             }
             break
+        }
     }
 
     // インデックスが範囲外の場合は、ストリーミングが完了しているかチェック
@@ -768,22 +769,4 @@ export const presentAssistantMessage = async () => {
         await presentAssistantMessage()
     }
     console.log("[presentAssistantMessage] 終了") // ログ: 関数実行終了
-}
-
-/**
- * ストリーム処理前に各種ストリーム関連状態をリセットする
- */
-function resetStreamingState(): void {
-    const state = globalStateManager.state;
-    state.assistantMessageContent = [];
-    state.didCompleteReadingStream = false;
-    state.userMessageContent = [];
-    state.userMessageContentReady = false;
-    state.didRejectTool = false;
-    state.didAlreadyUseTool = false;
-    state.presentAssistantMessageLocked = false;
-    state.presentAssistantMessageHasPendingUpdates = false;
-    state.didAutomaticallyRetryFailedApiRequest = false;
-    state.currentStreamingContentIndex = 0;
-    state.taskCompleted = false; // Add this line
 }

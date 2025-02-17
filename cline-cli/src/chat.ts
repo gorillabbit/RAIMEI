@@ -1,4 +1,4 @@
-import { ClineAskResponse } from "./types.js";
+import { ClineAskResponse, ClineMessage } from "./types.js";
 import { globalStateManager } from "./globalState.js";
 import { addToClineMessages } from "./tasks.js";
 import { Ask, MessageType } from "./database.js";
@@ -36,7 +36,7 @@ function clearAskResponse(): void {
  * clineMessages の最後のメッセージを更新する
  * @param updatedMessage 更新済みのメッセージ
  */
-function updateLastClineMessage(updatedMessage: any): void {
+function updateLastClineMessage(updatedMessage: ClineMessage): void {
   const messages = globalStateManager.state.clineMessages;
   globalStateManager.updateState({
     clineMessages: [...messages.slice(0, -1), updatedMessage],

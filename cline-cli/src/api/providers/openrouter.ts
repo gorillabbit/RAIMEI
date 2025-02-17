@@ -46,14 +46,14 @@ export class OpenRouterHandler implements ApiHandler {
 			case "anthropic/claude-3-haiku":
 			case "anthropic/claude-3-haiku:beta":
 			case "anthropic/claude-3-opus":
-			case "anthropic/claude-3-opus:beta":
+			case "anthropic/claude-3-opus:beta": {
 				openAiMessages[0] = {
 					role: "system",
 					content: [
 						{
 							type: "text",
 							text: systemPrompt,
-							// @ts-ignore-next-line
+							// @ts-expect-error-next-line
 							cache_control: { type: "ephemeral" },
 						},
 					],
@@ -73,11 +73,12 @@ export class OpenRouterHandler implements ApiHandler {
 							lastTextPart = { type: "text", text: "..." }
 							msg.content.push(lastTextPart)
 						}
-						// @ts-ignore-next-line
+						// @ts-expect-error-next-line
 						lastTextPart["cache_control"] = { type: "ephemeral" }
 					}
 				})
 				break
+			}
 			default:
 				break
 		}
@@ -105,7 +106,7 @@ export class OpenRouterHandler implements ApiHandler {
 			shouldApplyMiddleOutTransform = true
 		}
 
-		// @ts-ignore-next-line
+		// @ts-expect-error-next-line
 		const stream = await this.client.chat.completions.create({
 			model: model.id,
 			max_tokens: maxTokens,

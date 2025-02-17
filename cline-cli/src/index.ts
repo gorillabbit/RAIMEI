@@ -1,4 +1,3 @@
-import { logError } from './clineUtils.js';
 import { ClineConfig, ensureTaskDirectoryExists } from './tasks.js';
 import { randomUUID } from 'crypto';
 import { globalStateManager } from './globalState.js';

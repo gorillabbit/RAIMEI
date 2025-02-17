@@ -1,8 +1,9 @@
 import { Anthropic } from "@anthropic-ai/sdk"
-import { Stream as AnthropicStream } from "@anthropic-ai/sdk/streaming"
+import { Stream as AnthropicStream, Stream } from "@anthropic-ai/sdk/streaming"
 import { anthropicDefaultModelId, AnthropicModelId, anthropicModels, ApiHandlerOptions, ModelInfo } from "../../shared/api.js"
 import { ApiHandler } from "../index.js"
 import { ApiStream } from "../transform/stream.js"
+import { RawPromptCachingBetaMessageStreamEvent } from "@anthropic-ai/sdk/resources/beta/prompt-caching/messages.mjs"
 
 export class AnthropicHandler implements ApiHandler {
 	private options: ApiHandlerOptions
@@ -112,14 +113,14 @@ export class AnthropicHandler implements ApiHandler {
 					// tools,
 					// tool_choice: { type: "auto" },
 					stream: true,
-				})) as any
+				})) as Stream<RawPromptCachingBetaMessageStreamEvent>
 				break
 			}
 		}
 
 		for await (const chunk of stream) {
 			switch (chunk.type) {
-				case "message_start":
+				case "message_start": {
 					// tells us cache reads/writes/input/output
 					const usage = chunk.message.usage
 					yield {
@@ -130,6 +131,7 @@ export class AnthropicHandler implements ApiHandler {
 						cacheReadTokens: usage.cache_read_input_tokens || undefined,
 					}
 					break
+				}
 				case "message_delta":
 					// tells us stop_reason, stop_sequence, and output tokens along the way and at the end of the message
 

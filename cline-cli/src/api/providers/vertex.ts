@@ -29,7 +29,7 @@ export class VertexHandler implements ApiHandler {
 		})
 		for await (const chunk of stream) {
 			switch (chunk.type) {
-				case "message_start":
+				case "message_start": {
 					const usage = chunk.message.usage
 					yield {
 						type: "usage",
@@ -37,6 +37,7 @@ export class VertexHandler implements ApiHandler {
 						outputTokens: usage.output_tokens || 0,
 					}
 					break
+				}
 				case "message_delta":
 					yield {
 						type: "usage",

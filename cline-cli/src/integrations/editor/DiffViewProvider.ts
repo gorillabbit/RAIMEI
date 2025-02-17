@@ -63,9 +63,8 @@ export class GenericDiffProvider {
    * ※エディタ上の逐次更新処理（カーソル移動、装飾、スクロールなど）は VSCode 固有のため、ここではファイル内容の更新のみ行います。
    *
    * @param accumulatedContent 現在までの全更新済みの内容
-   * @param isFinal 最終更新かどうかのフラグ
    */
-  async update(accumulatedContent: string, isFinal: boolean): Promise<void> {
+  async update(accumulatedContent: string): Promise<void> {
     if (!this.relPath) {
       throw new Error("ファイルのパスが設定されていません。")
     }
@@ -81,14 +80,6 @@ export class GenericDiffProvider {
     //    汎用実装では accumulatedContent 全体でファイルを書き換える処理としています。
     const absolutePath = path.resolve(this.cwd, this.relPath)
     await fs.writeFile(absolutePath, accumulatedLines.join("\n"), "utf8")
-
-    // VSCode のエディタ上での各行更新や装飾処理は実現が困難なため、以下はコメントアウト
-    /*
-    for (let i = 0; i < diffLines.length; i++) {
-      // エディタ上で内容を逐次更新し、カーソルや装飾を変更する処理
-      // ここは VSCode の API を使って実装する必要があります。
-    }
-    */
   }
 
   /**
@@ -179,19 +170,4 @@ export class GenericDiffProvider {
     this.newContent = undefined
     this.streamedLines = []
   }
-
-  // --- 以下、VSCode 固有の処理は実装困難なため、汎用実装では省略またはコメントアウト ---
-
-  /*
-  // エディタ上にスクロールする処理
-  private scrollEditorToLine(line: number) {
-    // VSCode の API を利用しない場合、ターミナル出力などで代替する必要があります。
-  }
-
-  // Diff エディタを開く処理
-  private async openDiffEditor(): Promise<any> {
-    // VSCode の diff 表示機能は利用できないため、代替の UI 実装が必要です。
-    throw new Error("Diff エディタのオープンは VSCode 固有の機能のため、実装できません。")
-  }
-  */
 }

@@ -4,7 +4,6 @@ import osName from "os-name"
 
 export const SYSTEM_PROMPT = async (
 	cwd: string,
-	supportsComputerUse: boolean,
 ) => `
 ====
 TOOL USE

@@ -217,7 +217,7 @@ export async function constructNewFileContent(
 	let searchMatchIndex = -1
 	let searchEndIndex = -1
 
-	let lines = diffContent.split("\n")
+	const lines = diffContent.split("\n")
 	console.log("[constructNewFileContent] diffContent 行数:", lines.length)
 
 	// チャンクの最終行が不完全なマーカーの場合、削除する
@@ -281,13 +281,13 @@ export async function constructNewFileContent(
 					// 行トリム一致の試行
 					const lineMatch = lineTrimmedFallbackMatch(originalContent, currentSearchContent, lastProcessedIndex)
 					if (lineMatch) {
-						;[searchMatchIndex, searchEndIndex] = lineMatch
+						[searchMatchIndex, searchEndIndex] = lineMatch
 						console.log("[constructNewFileContent] 行トリム一致発見: 開始=", searchMatchIndex, " 終了=", searchEndIndex)
 					} else {
 						// ブロックアンカー一致の試行
 						const blockMatch = blockAnchorFallbackMatch(originalContent, currentSearchContent, lastProcessedIndex)
 						if (blockMatch) {
-							;[searchMatchIndex, searchEndIndex] = blockMatch
+							[searchMatchIndex, searchEndIndex] = blockMatch
 							console.log("[constructNewFileContent] ブロックアンカー一致発見: 開始=", searchMatchIndex, " 終了=", searchEndIndex)
 						} else {
 							throw new Error(
@@ -324,6 +324,7 @@ export async function constructNewFileContent(
 			currentSearchContent += line + "\n"
 		} else if (inReplace) {
 			currentReplaceContent += line + "\n"
+			console.log("[constructNewFileContent] 置換行を蓄積:", currentReplaceContent)
 			// 置換内容は、マッチ位置がわかっている場合、逐次結果に追加する
 			if (searchMatchIndex !== -1) {
 				result += line + "\n"

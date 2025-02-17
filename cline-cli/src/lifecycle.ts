@@ -3,12 +3,12 @@ import { cwd } from "process"
 import { globalStateManager } from "./globalState.js"
 import { formatResponse } from "./prompts/responses.js"
 import { findLastIndex } from "./shared/array.js"
-import { ClineApiReqInfo, ClineAsk, UserContent } from "./types.js"
-import { getSavedApiConversationHistory, getSavedClineMessages, overwriteApiConversationHistory, overwriteClineMessages, say } from "./tasks.js"
+import { ClineApiReqInfo, UserContent } from "./types.js"
+import { getSavedApiConversationHistory, overwriteApiConversationHistory, overwriteClineMessages, say } from "./tasks.js"
 import { ask } from "./chat.js"
 import { processClineRequests } from "./tools.js"
 import { findToolName } from "./integrations/misc/export-markdown.js"
-import { Ask, Say } from "./database.js"
+import { Ask, ClineMessage, Say } from "./database.js"
 
 export const startTask = async (task?: string, images?: string) => {
     console.log("Task started")
@@ -18,7 +18,7 @@ export const startTask = async (task?: string, images?: string) => {
     await say(Say.TEXT, task, images)
     state.isInitialized = true
 
-    let imageBlocks: Anthropic.ImageBlockParam[] = formatResponse.imageBlocks(images)
+    const imageBlocks: Anthropic.ImageBlockParam[] = formatResponse.imageBlocks(images)
     await initiateTaskLoop(
         [
             {
@@ -31,9 +31,9 @@ export const startTask = async (task?: string, images?: string) => {
     console.log("Task ended")
 }
 
-const resumeTaskFromHistory = async () => {
+export const resumeTaskFromHistory = async () => {
     const state = globalStateManager.state
-    const modifiedClineMessages = await getSavedClineMessages()
+    const modifiedClineMessages: ClineMessage[] = []    
 
     // Remove any resume messages that may have been added before
     const lastRelevantMessageIndex = findLastIndex(
@@ -59,7 +59,7 @@ const resumeTaskFromHistory = async () => {
 
     await overwriteClineMessages(modifiedClineMessages)
 
-    state.clineMessages = await getSavedClineMessages()
+    state.clineMessages = modifiedClineMessages
 
     // Now present the cline messages to the user and ask if they want to resume (NOTE: we ran into a bug before where the apiconversationhistory wouldnt be initialized when opening a old task, and it was because we were waiting for resume)
     // This is important in case the user deletes messages without resuming the task first
@@ -201,7 +201,7 @@ const resumeTaskFromHistory = async () => {
         throw new Error("Unexpected: No existing API conversation history")
         }
 
-    let newUserContent: UserContent = [...modifiedOldUserContent]
+    const newUserContent: UserContent = [...modifiedOldUserContent]
 
     const agoText = (() => {
         const timestamp = lastClineMessage?.ts ?? Date.now()

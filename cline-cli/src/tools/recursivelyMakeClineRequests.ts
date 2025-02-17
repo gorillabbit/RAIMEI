@@ -57,7 +57,7 @@ export const processClineRequests = async (
     // ── APIリクエストストリームの実行 ──
     const { assistantMessage, tokenUsage, error: streamError } = await processApiStream();
     if (streamError) {
-      await handleStreamAbort("streaming_failed", streamError, assistantMessage);
+      await handleStreamAbort("streaming_failed", streamError as string, assistantMessage);
     } else if (!assistantMessage) {
       await handleEmptyAssistantResponse();
     } else {
@@ -177,7 +177,7 @@ function resetStreamingState(): void {
 async function processApiStream(): Promise<{
   assistantMessage: string;
   tokenUsage: { inputTokens: number; outputTokens: number; cacheWriteTokens: number; cacheReadTokens: number; totalCost?: number };
-  error?: any;
+  error?: unknown;
 }> {
   const state = globalStateManager.state;
   let assistantMessage = "";
@@ -191,7 +191,8 @@ async function processApiStream(): Promise<{
     const stream = attemptApiRequest(previousApiReqIndex); // async iterator を返す
     state.isStreaming = true;
 
-    for await (const chunk of stream) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for await (const chunk of stream as AsyncGenerator<any, void, unknown>) {
       if (chunk.type === "usage") {
         tokenUsage.inputTokens += chunk.inputTokens;
         tokenUsage.outputTokens += chunk.outputTokens;

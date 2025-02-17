@@ -16,7 +16,7 @@ export async function runCommand(cmd: string, cwd?: string): Promise<string> {
     }
     log(`実行結果: ${stdout.trim()}`);
     return stdout.trim();
-  } catch (error: any) {
+  } catch (error) {
     logError(`コマンド実行失敗: ${error.message}`);
     throw error;
   }
@@ -29,7 +29,7 @@ function isCommandSafe(cmd: string, allowedCommands: string[]): boolean {
   const m = cmd.match(/^\s*(\S+)/);
   if (!m) {
     return false
-  };
+  }
   const baseCmd = m[1];
   return allowedCommands.includes(baseCmd);
 }

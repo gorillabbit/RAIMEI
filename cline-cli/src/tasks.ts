@@ -4,7 +4,6 @@ import { taskBaseDir, GlobalFileNames, configPath } from './const.js';
 import { Anthropic } from "@anthropic-ai/sdk"
 import { globalStateManager } from './globalState.js';
 import { ToolUseName } from './types.js';
-import { HistoryItem } from './shared/HistoryItem.js';
 import { formatResponse } from './prompts/responses.js';
 import { AppDataSource, Ask, ClineMessage, MessageType, Say } from './database.js';
 import { ApiProvider } from './shared/api.js';
@@ -159,18 +158,6 @@ const saveApiConversationHistory = async (
 };
 
 /**
- * 保存されたClineメッセージを取得する関数
- * @returns {Promise<ClineMessage[]>} - Clineメッセージの配列
- */
-export const getSavedClineMessages = async (): Promise<ClineMessage[]> => {
-  // const taskDir = globalStateManager.state.taskDir;
-  // const filePath = path.join(taskDir, GlobalFileNames.uiMessages);
-  // const file = await fs.readFile(filePath, "utf8");
-  // return JSON.parse(file);
-  return [];
-};
-
-/**
  * 新しいClineメッセージをメッセージリストに追加し、保存する関数
  * @param {ClineMessage} message - 追加するClineメッセージオブジェクト
  */
@@ -180,18 +167,12 @@ export const addToClineMessages = async (
   // conversationHistoryIndexを現在のAPI会話履歴数 - 1 に設定（最後のユーザーメッセージを指す想定）
   const state = globalStateManager.state;
   message.conversationHistoryIndex = state.apiConversationHistory.length - 1;
-  message.conversationHistoryDeletedRangeStart = state.conversationHistoryDeletedRange?.start ?? null;
-  message.conversationHistoryDeletedRangeEnd = state.conversationHistoryDeletedRange?.end ?? null;
+  message.conversationHistoryDeletedRangeStart = state.conversationHistoryDeletedRange?.[0];
+  message.conversationHistoryDeletedRangeEnd = state.conversationHistoryDeletedRange?.[1];
   if (message.type === "say" && !message.text) {
     return;
   }
 
-  // const clineMessages = await getSavedClineMessages();
-  // clineMessages.push(message);
-
-  // グローバルステートにも反映
-  // state.clineMessages = clineMessages;
-  // await saveClineMessages();
   if (!AppDataSource.isInitialized) {
     console.error("Data Source not initialized");
     return;
@@ -216,80 +197,6 @@ export const overwriteClineMessages = async (
   newMessages: ClineMessage[],
 ) => {
   globalStateManager.state.clineMessages = newMessages;
-  // await saveClineMessages();
-};
-
-/**
- * Clineメッセージを保存する関数。保存後にタスクヒストリーの更新も行う。
- */
-// export const saveClineMessages = async () => {
-//   try {
-//     const state = globalStateManager.state;
-//     const taskDir = state.taskDir;
-//     const filePath = path.join(taskDir, GlobalFileNames.uiMessages);
-//     const clineMessages = state.clineMessages;
-
-//     // ClineメッセージをファイルにJSONとして書き込み
-//     await fs.writeFile(filePath, JSON.stringify(clineMessages));
-
-//     // ChatView上で結合されるのと同様にAPIメトリクスを取得
-//     const apiMetrics = getApiMetrics(
-//       combineApiRequests(
-//         combineCommandSequences(clineMessages.slice(1))
-//       )
-//     );
-
-//     // 最初のメッセージ（タスク内容）
-//     const taskMessage = clineMessages[0];
-
-//     // 「resume_task」や「resume_completed_task」を除いた最後の関連メッセージを検索
-//     const lastRelevantMessage =
-//       clineMessages[
-//         findLastIndex(clineMessages, (m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task"))
-//       ];
-
-//     let taskDirSize = 0;
-//     try {
-//       // getFolderSize.looseはエラーを無視して実行
-//       // バイト数が返るので、size / 1000 / 1000 でMB換算可能
-//       taskDirSize = await getFolderSize.loose(taskDir);
-//     } catch (error) {}
-
-//     // ヒストリーを更新
-//     updateTaskHistory({
-//       id: state.taskId,
-//       ts: lastRelevantMessage.ts,
-//       task: taskMessage.text ?? "",
-//       tokensIn: apiMetrics.totalTokensIn,
-//       tokensOut: apiMetrics.totalTokensOut,
-//       cacheWrites: apiMetrics.totalCacheWrites,
-//       cacheReads: apiMetrics.totalCacheReads,
-//       totalCost: apiMetrics.totalCost,
-//       size: taskDirSize,
-//       conversationHistoryDeletedRange: state.conversationHistoryDeletedRange,
-//     });
-//   } catch (error) {
-//     console.error("Clineメッセージの保存に失敗しました:", error);}
-// };
-
-/**
- * タスク履歴を更新するためのヘルパー関数
- * @param {HistoryItem} item - タスク履歴アイテム
- * @returns {HistoryItem[]} - 更新後のタスク履歴配列
- */
-const updateTaskHistory = (item: HistoryItem): HistoryItem[] => {
-
-  const history = globalStateManager.state.taskHistory;
-  const existingItemIndex = history.findIndex((h) => h.id === item.id);
-
-  if (existingItemIndex !== -1) {
-    // 既存のタスクがある場合は置き換える
-    history[existingItemIndex] = item;
-  } else {
-    // ない場合は新規に追加
-    history.push(item);
-  }
-  return history;
 };
 
 /**

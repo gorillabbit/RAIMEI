@@ -39,7 +39,7 @@ export class LmStudioHandler implements ApiHandler {
 					}
 				}
 			}
-		} catch (error) {
+		} catch {
 			// LM Studio doesn't return an error code/body for now
 			throw new Error(
 				"Please check the LM Studio developer logs to debug what went wrong. You may need to load the model with a larger context length to work with Cline's prompts.",

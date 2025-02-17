@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import { ToolUseName } from './assistant-message';
 import Anthropic from '@anthropic-ai/sdk';
 import { ClineMessage } from './types.js';
 
