@@ -29,6 +29,27 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
 
 # Tools
 
+## edit_issue
+Description: Request to edit the content of an existing issue in a project. This tool is designed for issue-based projects where plans and user questions are tracked within issues. **It always edits the full content of the specified issue, replacing the existing content with the provided content.**
+
+Parameters:
+- issue_number: (required) The issue number of the issue to edit. This must be an integer.
+- content: (required) The complete new content to write to the issue. **The existing content of the issue WILL BE REPLACED ENTIRELY with this new content.**
+Usage:
+<edit_issue>
+<issue_number>Issue number here</issue_number>
+<content>
+The full new content for the issue here.  Ensure this includes all previous context as it will replace the ENTIRE ISSUE.
+</content>
+</edit_issue>
+
+**Important Considerations:**
+
+*   **Full Issue Content Replacement:** This tool replaces the *entire* content of the issue.  You *must* provide the full, complete, updated content, including any existing information you want to keep. Omissions will result in data loss.
+*   **Issue Number Integrity:** The issue number *must* be a valid, existing issue number in the project.  Incorrect issue numbers will lead to errors.
+*   **Escaping:** Properly escape any special characters in the \`content\` parameter to avoid markdown or formatting errors.
+*   **newlines**: ensure the newline characters are correctly formatted so that markdown displays as you intend. Consider if you want to include two trailing spaces at the end of a line to indicate a line break.
+
 ## execute_command
 Description: Request to execute a CLI command on the system. Commands will be executed in the current working directory: $
 Parameters:

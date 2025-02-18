@@ -21,6 +21,7 @@ import { GenericDiffProvider } from "../integrations/DiffViewProvider.js"
 import { fileExistsAtPath } from "../utils/fs.js"
 import { constructNewFileContent } from "../assistant-message/diff.js"
 import { Ask, MessageType, Say } from "../database.js"
+import { editGitHubIssue } from "./editIssue.js"
 
 /**
  * アシスタントのメッセージをユーザーに提示し、各種コンテンツブロックやツールとの対話を処理します。
@@ -107,6 +108,8 @@ export const presentAssistantMessage = async () => {
             // ツールごとの説明を生成する関数
             const toolDescription = () => {
                 switch (block.name) {
+                    case "edit_issue":
+                        return `[${block.name} for '${block.params.issue_id}']`
                     case "execute_command":
                         return `[${block.name} for '${block.params.command}']`
                     case "read_file":
@@ -219,6 +222,34 @@ export const presentAssistantMessage = async () => {
 
             // 各ツール名ごとの処理分岐
             switch (block.name) {
+                case "edit_issue": {
+                    console.log("edit_issue")
+                    const issueId: number | undefined = Number(block.params.issue_id)
+                    const content: string | undefined = block.params.content
+                    if (!content) {
+                        state.consecutiveMistakeCount++
+                        pushToolResult(await sayAndCreateMissingParamError("edit_issue", "content"))
+                        await saveCheckpoint()
+                        break
+                    }
+                    if (!issueId) {
+                        state.consecutiveMistakeCount++
+                        pushToolResult(await sayAndCreateMissingParamError("edit_issue", "issue_id"))
+                        await saveCheckpoint()
+                        break
+                    }
+                    state.consecutiveMistakeCount = 0
+                    try {
+                        await editGitHubIssue(issueId,content)
+                    } catch {
+                        state.consecutiveMistakeCount++
+                        pushToolResult(await sayAndCreateMissingParamError("edit_issue", "issue_id"))
+                        await saveCheckpoint()
+                        break
+                    }
+                    await say(Say.TOOL, `Issue ${issueId} を編集します。`, undefined, block.partial)
+                    break
+                }
                 case "write_to_file":
                 case "replace_in_file": {
                     const relPath: string | undefined = block.params.path

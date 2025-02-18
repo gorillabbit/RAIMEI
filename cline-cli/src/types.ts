@@ -54,6 +54,7 @@ export interface ClineMessage {
 }
 
 export const toolUseNames = [
+	"edit_issue",
 	"execute_command",
 	"read_file",
 	"write_to_file",

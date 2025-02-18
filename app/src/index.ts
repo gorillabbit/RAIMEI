@@ -2,8 +2,9 @@ import fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { FastifyPluginAsync } from 'fastify';
 import { config } from 'dotenv';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
+import { once } from 'events';
 
 config(); // Load environment variables from .env
 
@@ -68,26 +69,37 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
           const { action, issue } = payload;
           if (action === 'opened' && issue) {
             console.log(`Issue created: title=${issue.title}, url=${issue.html_url}`);
-            const command = [
-              "npx",
+            const command = "npx";
+            const args = [
               "node",
-              "cline-cli/build/index.js",
+              "~/RAIMEI/cline-cli/build/index.js",
               "/home/gorillabbit/RAIMEI",
-              `Issue created: ${issue.title} URL: ${issue.html_url} このイシューを読んで、リポジトリの中身も考えて実装計画を立てて`,
+              `Issue created: ${issue.title} URL: ${issue.html_url} このイシューを読んで、リポジトリの中身も考えて実装計画を立ててイシューに記載してください。`,
               "gemini",
             ];
-
-            try {
-              const { stdout, stderr } = await execAsync(command.join(' '));
-              console.log('Command output:', stdout);
-              if (stderr) {
-                console.error('Command error:', stderr);
-              }
-            } catch (error: any) {  // Explicitly type error as 'any' or 'Error'
-              console.error('Error executing command:', error);
-              // Handle the error appropriately (e.g., log it, send a notification, etc.)
-            }
-
+          
+            const childProcess = spawn(command, args, { shell: true }); // shell: true is important for npx
+          
+            childProcess.stdout.on('data', (data) => {
+              console.log(`stdout: ${data}`);
+            });
+          
+            childProcess.stderr.on('data', (data) => {
+              console.error(`stderr: ${data}`);
+            });
+          
+            childProcess.on('close', (code) => {
+              console.log(`child process exited with code ${code}`);
+            });
+          
+            childProcess.on('error', (err) => {
+              console.error('Failed to start subprocess.', err);
+            });
+          
+            // promisify the 'close' event
+            await once(childProcess, 'close');
+          
+            console.log('Command execution completed.');
 
           } else {
             console.log(`Issue event received: action=${action}, title=${issue?.title}`);

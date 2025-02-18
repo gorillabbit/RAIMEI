@@ -132,5 +132,7 @@ terraformer import google --resources="*" --projects=$PROJECT_ID --regions=$REGI
 terraformer import google --compact --resources=cloudbuild --projects=$PROJECT_ID  --regions=$REGION
 
 # tailscaleでサーバーを起動する
+cd app
+node dist/index.js
 sudo tailscale funnel 8000
 ```

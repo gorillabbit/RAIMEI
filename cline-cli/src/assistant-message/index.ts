@@ -9,6 +9,7 @@ export interface TextContent {
 }
 
 export const toolUseNames = [
+	"edit_issue",
 	"execute_command",
 	"read_file",
 	"write_to_file",
@@ -28,6 +29,7 @@ export const toolUseNames = [
 export type ToolUseName = (typeof toolUseNames)[number]
 
 export const toolParamNames = [
+	"issue_id",
 	"command",
 	"requires_approval",
 	"path",
