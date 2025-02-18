@@ -264,7 +264,7 @@ function updateLastApiRequestMessageWithUsage(tokenUsage: {
   cacheWriteTokens: number;
   cacheReadTokens: number; totalCost?: number
 }): void {
-    const state = globalStateManager.state;
+  const state = globalStateManager.state;
   const messages = state.clineMessages;
   const lastIndex = findLastIndex(messages, (m) => m.say === "api_req_started");
   const currentMsg = JSON.parse(messages[lastIndex].text || "{}");

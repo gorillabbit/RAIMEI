@@ -17,7 +17,7 @@ import { ToolResponse, ClineSayTool, COMPLETION_RESULT_CHANGES_FLAG } from "../t
 import { getReadablePath } from "../utils/path.js"
 import { doesLatestTaskCompletionHaveNewChanges } from "./doesLatestTaskCompletionHaveNewChanges.js"
 import { executeCommandTool } from "./executeCommandTool.js"
-import { GenericDiffProvider } from "../integrations/editor/DiffViewProvider.js"
+import { GenericDiffProvider } from "../integrations/DiffViewProvider.js"
 import { fileExistsAtPath } from "../utils/fs.js"
 import { constructNewFileContent } from "../assistant-message/diff.js"
 import { Ask, MessageType, Say } from "../database.js"

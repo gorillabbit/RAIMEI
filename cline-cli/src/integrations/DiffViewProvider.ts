@@ -1,7 +1,7 @@
 import * as path from "path"
 import * as fs from "fs/promises"
-import { createDirectoriesForFile } from "../../utils/fs.js" // ファイル用ユーティリティ（必要に応じて実装してください）
-import { formatResponse } from "../../prompts/responses.js"
+import { createDirectoriesForFile } from "../utils/fs.js" // ファイル用ユーティリティ（必要に応じて実装してください）
+import { formatResponse } from "../prompts/responses.js"
 
 /**
  * GenericDiffProvider クラス

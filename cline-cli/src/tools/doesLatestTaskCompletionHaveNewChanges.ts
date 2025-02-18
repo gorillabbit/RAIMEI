@@ -6,8 +6,7 @@ import { globalStateManager } from "../globalState.js"
  * Checks if the latest task completion has new changes in the workspace.
  * @returns {Promise<boolean>} - Promise resolving to true if there are new changes, false otherwise.
  */
-export const doesLatestTaskCompletionHaveNewChanges = async () => {
-    console.log("doesLatestTaskCompletionHaveNewChanges started"); // Log: Function execution start
+export const doesLatestTaskCompletionHaveNewChanges = async (): Promise<boolean> => {
     const state = globalStateManager.state
     const messageIndex = findLastIndex(state.clineMessages, (m) => m.say === "completion_result")
     const message = state.clineMessages[messageIndex]
@@ -43,14 +42,11 @@ export const doesLatestTaskCompletionHaveNewChanges = async () => {
         )
         const changedFilesCount = changedFiles?.length || 0
         if (changedFilesCount > 0) {
-            console.log("doesLatestTaskCompletionHaveNewChanges finished - has changes"); // Log: Function execution finish - changes detected
             return true
         }
     } catch (error) {
         console.error("Failed to get diff set:", error)
         return false
     }
-
-    console.log("doesLatestTaskCompletionHaveNewChanges finished - no changes"); // Log: Function execution finish - no changes
     return false
 }
