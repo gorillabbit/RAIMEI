@@ -76,7 +76,6 @@ async function trimHistoryIfNeeded(previousApiReqIndex: number): Promise<void> {
 
   const previousRequest = state.clineMessages[previousApiReqIndex];
   if (previousRequest?.text) {
-    console.log(JSON.parse(previousRequest.text))
     const { tokensIn, tokensOut, cacheWrites, cacheReads }: ClineApiReqInfo = JSON.parse(previousRequest.text);
     const totalTokens = (tokensIn || 0) + (tokensOut || 0) + (cacheWrites || 0) + (cacheReads || 0);
 

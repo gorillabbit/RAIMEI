@@ -1,13 +1,14 @@
 
 # テスト用のスクリプト
-test_dir="/home/gorillabbit/RAIMEI"
+test_dir="/home/gorillabbit/RAIMEI/test"
 
 # test.txtが存在しないことを確認
 if [ -f "$test_dir/test.txt" ]; then
   rm "$test_dir/test.txt"
 fi
 # テスト用のファイルを作成
-npx node build/index.js "$test_dir" "test.txtファイルを作ってください" gemini
+# 空のファイルを作ることができない
+npx node build/index.js "$test_dir" "test.txtファイルを作って「こんにちは」と書いてください" gemini
 
 # test.txtが存在することを確認
 if [ ! -f "$test_dir/test.txt" ]; then
@@ -17,7 +18,7 @@ fi
 
 # test.txtの中身を編集
 cat "$test_dir/test.txt"
-npx node build/index.js "$test_dir" "test.txtファイルに「あいうえお」と記入してください" gemini
+npx node build/index.js "$test_dir" "test.txtファイルを「あいうえお」と書き換えてしてください" gemini
 
 # test.txtの中身が編集されていることを確認
 if [ "$(cat "$test_dir/test.txt")" == "あいうえお" ]; then
@@ -29,7 +30,7 @@ else
 fi
 
 # test.txtを削除
-npx node build/index.js "$test_dir" "test.txtファイルを削除してください" gemini
+rm "$test_dir/test.txt"
 
 # test.txtが削除されていることを確認
 if [ -f "$test_dir/test.txt" ]; then

@@ -225,6 +225,7 @@ export const presentAssistantMessage = async () => {
                     const content: string | undefined = block.params.content // write_to_file用
                     const diff: string | undefined = block.params.diff // replace_in_file用
                     if (!relPath || (!content && !diff)) {
+                        // 空のファイルを作ることはできない
                         console.log("必要なパラメータが不足しているため、ツール処理を中断します。")
                         break
                     }
