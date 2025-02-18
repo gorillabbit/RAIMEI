@@ -1,3 +1,20 @@
+## 開く
+# →未着手ラベルが付与される
+# →RAIMEIに送られる
+# →RAIMEIが作業中ラベルに変更
+# →RAIMEIがイシュー記載
+# →RAIMEIがイシューレビュー待ちラベルに変更
+# →RAIMEIがイシューをレビュー
+# →RAIMEIがイシューレビュー完了ラベルに変更
+# →RAIMEIが実装着手ラベルに変更
+# →RAIMEIが実装
+# →RAIMEIがPRを作成
+# →RAIMEIがPRレビュー待ちラベルに変更
+# →RAIMEIがPRレビュー
+# →RAIMEIが人間PRレビューラベルに変更
+# →人間がレビューする
+# →人間がマージ
+# →完了ラベルに変更
 - name: '未着手 (Open)'
   description: 'イシューが作成されたばかりで、まだ誰も作業を開始していない状態。'
   color: 'ededed'
@@ -13,3 +30,18 @@
 - name: '保留 (On Hold)'
   description: '一時的に作業を中断している状態。'
   color: '6c757d'
+- name: 'RAIMEI イシュー記載中'
+  description: 'RAIMEIが新しいイシューを記載している状態。'
+  color: 'f0f0f0'
+- name: 'RAIMEI イシューレビュー待ち'
+  description: 'RAIMEIが記載したイシューをレビュー待ちしている状態。'
+  color: 'f0f0f0'
+- name: 'RAIMEI 実装中'
+  description: 'RAIMEIが実装を行っている状態。'
+  color: 'f0f0f0'
+- name: 'RAIMEI PRレビュー待ち'
+  description: 'RAIMEIが作成したPRをレビュー待ちしている状態。'
+  color: 'f0f0f0'
+- name: '人間 PRレビュー待ち'
+  description: '人間が作成したPRをレビュー待ちしている状態。'
+  color: 'f0f0f0'
