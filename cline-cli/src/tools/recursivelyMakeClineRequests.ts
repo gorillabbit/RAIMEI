@@ -1,7 +1,6 @@
 import { formatResponse } from "../prompts/responses.js";
 import { findLastIndex } from "../shared/array.js";
 import { parseAssistantMessage } from "../assistant-message/parse-assistant-message.js";
-import { ask } from "../chat.js";
 import { globalStateManager } from "../globalState.js";
 import CheckpointTracker from "../integrations/checkpoints/CheckpointTracker.js";
 import { formatContentBlockToMarkdown } from "../integrations/misc/export-markdown.js";
@@ -10,9 +9,7 @@ import { UserContent, ClineApiReqInfo, ClineApiReqCancelReason } from "../types.
 import { attemptApiRequest } from "./attemptApiRequest.js";
 import { loadContext } from "./loadContext.js";
 import { presentAssistantMessage } from "./presentAssistantMessage.js";
-import { apiStateManager } from "../apiState.js";
-import { buildApiHandler } from "../api/index.js";
-import { Ask, Say } from "../database.js";
+import { Say } from "../database.js";
 
 /**
  * APIリクエストの流れを「ユーザーコンテンツがなくなるまで」ループで処理する簡潔な実装例
@@ -96,26 +93,17 @@ export const processClineRequests = async (
 async function checkLimits(userContent: UserContent): Promise<void> {
     const state = globalStateManager.state;
 
-  if (state.consecutiveMistakeCount >= 3) {
+  if (state.consecutiveMistakeCount >= 6) {
     // ユーザーへ通知＆ガイダンス取得（実装詳細は省略）
-    console.log("[エラー] Clineが問題を抱えています。タスクを続行しますか？");
-    const apiState = buildApiHandler(apiStateManager.getState());
-    const { response, text, images } = await ask(
-      Ask.MISTAKE_LIMIT_REACHED,
-      apiState.getModel().id.includes("claude")
-        ? "思考プロセスの失敗が疑われます。ガイダンスを入力してください。"
-        : "複雑なタスクのため、より高性能なモデルが推奨されます。"
+    console.log("[エラー] Clineが問題を抱えています。タスクを中断します");
+    userContent.push(
+      {
+        type: "text",
+        text: formatResponse.tooManyMistakes(),
+      },
     );
-    if (response === "messageResponse") {
-      userContent.push(
-        {
-          type: "text",
-          text: formatResponse.tooManyMistakes(text),
-        },
-        ...formatResponse.imageBlocks(images)
-      );
-    }
     state.consecutiveMistakeCount = 0;
+    state.abort = true;
   }
 }
 
@@ -162,7 +150,6 @@ function resetStreamingState(): void {
     state.didCompleteReadingStream = false;
     state.userMessageContent = [];
     state.userMessageContentReady = false;
-    state.didRejectTool = false;
     state.didAlreadyUseTool = false;
     state.presentAssistantMessageLocked = false;
     state.presentAssistantMessageHasPendingUpdates = false;
@@ -207,7 +194,6 @@ async function processApiStream(): Promise<{
       // 中断条件（abort, ユーザーによるツール拒否、既にツール使用済み）をチェック
       if (
         state.abort ||
-        state.didRejectTool ||
         state.didAlreadyUseTool
       ) {
         break;

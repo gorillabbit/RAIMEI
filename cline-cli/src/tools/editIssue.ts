@@ -19,7 +19,7 @@ if (!auth || !owner || !repo) {
 }
 
 const octokit = new MyOctokit({
-    auth: auth,
+    auth,
     throttle: {
         onRateLimit: (retryAfter) => {
             console.warn(`Request quota exhausted! Retrying after ${retryAfter} seconds`);
@@ -49,9 +49,9 @@ export const editGitHubIssue = async (issue_number: number, newContent: string):
     }
     try {
         const response = await octokit.rest.issues.update({
-            owner: owner,
-            repo: repo,
-            issue_number: issue_number,
+            owner,
+            repo,
+            issue_number,
             body: newContent,
         });
 

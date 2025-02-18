@@ -17,6 +17,7 @@ import {
    * @returns 分割後のコンテンツブロック配列
    */
   export const parseAssistantMessage = (assistantMessage: string): AssistantMessageContent[] => {
+	console.log("assistantMessage: ", assistantMessage);
 	// 解析結果を格納する配列
 	const contentBlocks: AssistantMessageContent[] = [];
   

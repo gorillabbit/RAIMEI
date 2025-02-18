@@ -36,7 +36,6 @@ export interface GlobalState {
 	presentAssistantMessageHasPendingUpdates : boolean
 	userMessageContent: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam)[]
 	userMessageContentReady : boolean
-	didRejectTool: boolean
 	didAlreadyUseTool : boolean
 	didCompleteReadingStream : boolean
 	didAutomaticallyRetryFailedApiRequest : boolean
@@ -71,7 +70,6 @@ class GlobalStateManager {
     presentAssistantMessageHasPendingUpdates: false,
     userMessageContent: [],
     userMessageContentReady: false,
-    didRejectTool: false,
     didAlreadyUseTool: false,
     didCompleteReadingStream: false,
     didAutomaticallyRetryFailedApiRequest: false,

@@ -29,7 +29,7 @@ export const toolUseNames = [
 export type ToolUseName = (typeof toolUseNames)[number]
 
 export const toolParamNames = [
-	"issue_id",
+	"issue_number",
 	"command",
 	"requires_approval",
 	"path",

@@ -33,7 +33,7 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
 Description: Request to edit the content of an existing issue in a project. This tool is designed for issue-based projects where plans and user questions are tracked within issues. **It always edits the full content of the specified issue, replacing the existing content with the provided content.**
 
 Parameters:
-- issue_number: (required) The issue number of the issue to edit. This must be an integer.
+- issue_number: (required) The issue number of the issue to edit. This must be an integer. This number is the last digit of the issue URL.
 - content: (required) The complete new content to write to the issue. **The existing content of the issue WILL BE REPLACED ENTIRELY with this new content.**
 Usage:
 <edit_issue>

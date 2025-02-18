@@ -5,6 +5,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import { once } from 'events';
+import { getIssueContent } from './getIssue';
 
 config(); // Load environment variables from .env
 
@@ -43,6 +44,12 @@ const verifySignature = (secret: string, body: string, signatureHeader: string):
   return timingSafeEqual(Buffer.from(digest, 'hex'), Buffer.from(signature, 'hex'));
 };
 
+const extractLastNumber = (url: string): string | null => {
+  const parts = url.split('/');
+  const lastPart = parts.pop(); // 最後の要素を取得
+  return lastPart && /^\d+$/.test(lastPart) ? lastPart : null;
+}
+
 
 const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
   server.post(
@@ -67,14 +74,19 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
       try {
         if (eventType === 'issues') {
           const { action, issue } = payload;
-          if (action === 'opened' && issue) {
+          if (!issue) {
+            return reply.status(400).send({ error: 'Missing issue data' });
+          }
+          const issueContent = await getIssueContent(issue.html_url);
+          const issueNumber = extractLastNumber(issue.html_url);
+          if (action === 'opened') {
             console.log(`Issue created: title=${issue.title}, url=${issue.html_url}`);
             const command = "npx";
             const args = [
               "node",
               "~/RAIMEI/cline-cli/build/index.js",
               "/home/gorillabbit/RAIMEI",
-              `Issue created: ${issue.title} URL: ${issue.html_url} このイシューを読んで、リポジトリの中身も考えて実装計画を立ててイシューに記載してください。`,
+              `"このイシューを読んで、リポジトリの中身も考えて実装計画を立ててイシューに記載してください。issue_number:${issueNumber} タイトル:${issue.title} 内容:${issueContent}"`,
               "gemini",
             ];
           

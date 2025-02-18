@@ -62,7 +62,7 @@ export const presentAssistantMessage = async () => {
 
     switch (block.type) {
         case "text": {
-            if (state.didRejectTool || state.didAlreadyUseTool) {
+            if (state.didAlreadyUseTool) {
                 break
             }
             let content = block.content
@@ -109,7 +109,7 @@ export const presentAssistantMessage = async () => {
             const toolDescription = () => {
                 switch (block.name) {
                     case "edit_issue":
-                        return `[${block.name} for '${block.params.issue_id}']`
+                        return `[${block.name} for '${block.params.issue_number}']`
                     case "execute_command":
                         return `[${block.name} for '${block.params.command}']`
                     case "read_file":
@@ -141,21 +141,6 @@ export const presentAssistantMessage = async () => {
                 }
             }
             const userMessageContent = state.userMessageContent
-            if (state.didRejectTool) {
-                // ユーザーがツールを拒否した場合、ツール実行をスキップ
-                if (!block.partial) {
-                    userMessageContent.push({
-                        type: "text",
-                        text: `前回のツール拒否のため、${toolDescription()} をスキップします。`,
-                    })
-                } else {
-                    userMessageContent.push({
-                        type: "text",
-                        text: `前回のツール拒否のため、部分的な${toolDescription()}は中断されました。`,
-                    })
-                }
-                break
-            }
 
             if (state.didAlreadyUseTool) {
                 // 既にツールが使用されている場合、以降のツール呼び出しは無視
@@ -223,31 +208,28 @@ export const presentAssistantMessage = async () => {
             // 各ツール名ごとの処理分岐
             switch (block.name) {
                 case "edit_issue": {
-                    console.log("edit_issue")
-                    const issueId: number | undefined = Number(block.params.issue_id)
+                    const issueNumber: number | undefined = Number(block.params.issue_number)
                     const content: string | undefined = block.params.content
                     if (!content) {
-                        state.consecutiveMistakeCount++
                         pushToolResult(await sayAndCreateMissingParamError("edit_issue", "content"))
                         await saveCheckpoint()
                         break
                     }
-                    if (!issueId) {
-                        state.consecutiveMistakeCount++
-                        pushToolResult(await sayAndCreateMissingParamError("edit_issue", "issue_id"))
+                    if (!issueNumber) {
+                        pushToolResult(await sayAndCreateMissingParamError("edit_issue", "issue_number"))
                         await saveCheckpoint()
                         break
                     }
                     state.consecutiveMistakeCount = 0
                     try {
-                        await editGitHubIssue(issueId,content)
+                        await editGitHubIssue(issueNumber, content)
                     } catch {
                         state.consecutiveMistakeCount++
-                        pushToolResult(await sayAndCreateMissingParamError("edit_issue", "issue_id"))
+                        pushToolResult(await sayAndCreateMissingParamError("edit_issue", "issue_number"))
                         await saveCheckpoint()
                         break
                     }
-                    await say(Say.TOOL, `Issue ${issueId} を編集します。`, undefined, block.partial)
+                    await say(Say.TOOL, `Issue ${issueNumber} を編集します。`, undefined, block.partial)
                     break
                 }
                 case "write_to_file":
@@ -743,7 +725,7 @@ export const presentAssistantMessage = async () => {
 
     // インデックスが範囲外の場合は、ストリーミングが完了しているかチェック
     state.presentAssistantMessageLocked = false // ロック解除
-    if (!block.partial || state.didRejectTool || state.didAlreadyUseTool) {
+    if (!block.partial || state.didAlreadyUseTool) {
         if (state.currentStreamingContentIndex === state.assistantMessageContent.length - 1) {
             state.userMessageContentReady = true
         }

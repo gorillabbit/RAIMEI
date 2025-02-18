@@ -9,5 +9,8 @@
 	},
 	"scripts": {
 		"build": "tsc"
+	},
+	"dependencies": {
+		"@octokit/rest": "^21.1.1"
 	}
 }
