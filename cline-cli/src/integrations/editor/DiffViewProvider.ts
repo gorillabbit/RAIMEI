@@ -144,14 +144,11 @@ export class GenericDiffProvider {
       // 作成されたディレクトリを逆順に削除する
       for (let i = this.createdDirs.length - 1; i >= 0; i--) {
         await fs.rmdir(this.createdDirs[i])
-        console.log(`Directory ${this.createdDirs[i]} has been deleted.`)
       }
-      console.log(`File ${absolutePath} has been deleted.`)
     } else {
       // 既存ファイルの場合、元の内容に戻す
       if (this.originalContent !== undefined) {
         await fs.writeFile(absolutePath, this.originalContent, "utf8")
-        console.log(`File ${absolutePath} has been reverted to its original content.`)
       }
     }
     // リセット処理

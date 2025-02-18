@@ -11,7 +11,6 @@ import { findToolName } from "./integrations/misc/export-markdown.js"
 import { Ask, ClineMessage, Say } from "./database.js"
 
 export const startTask = async (task?: string, images?: string) => {
-    console.log("Task started")
     const state = globalStateManager.state
     state.clineMessages = []
     state.apiConversationHistory = []
@@ -28,7 +27,6 @@ export const startTask = async (task?: string, images?: string) => {
             ...imageBlocks,
         ]
     )
-    console.log("Task ended")
 }
 
 export const resumeTaskFromHistory = async () => {

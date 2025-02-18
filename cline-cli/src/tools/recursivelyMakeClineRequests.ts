@@ -277,7 +277,6 @@ function updateLastApiRequestMessageWithUsage(tokenUsage: {
     cacheReads: tokenUsage.cacheReadTokens,
     cost: tokenUsage.totalCost,
   } as ClineApiReqInfo);
-  console.log("[updateLastApiRequestMessageWithUsage] APIリクエストメッセージを更新しました:");
 }
 
 /**

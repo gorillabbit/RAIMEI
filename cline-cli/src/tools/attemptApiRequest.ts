@@ -1,21 +1,17 @@
 import delay from "delay";
 import path from "path";
 import fs from "fs/promises";
-import { serializeError } from "serialize-error";
 import { OpenRouterHandler } from "../api/providers/openrouter.js";
 import { OpenAiHandler } from "../api/providers/openai.js";
-import { ask } from "../chat.js";
 import { getTruncatedMessages } from "../clineUtils.js";
 import { GlobalFileNames } from "../const.js";
 import { globalStateManager } from "../globalState.js";
 import { SYSTEM_PROMPT, addUserInstructions } from "../prompts/system.js";
-import { say } from "../tasks.js";
 import { ClineApiReqInfo } from "../types.js";
 import { fileExistsAtPath } from "../utils/fs.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { apiStateManager } from "../apiState.js";
 import { buildApiHandler } from "../api/index.js";
-import { Ask, Say } from "../database.js";
 
 /**
  * APIリクエスト用のシステムプロンプトを構築する
@@ -38,17 +34,14 @@ async function buildSystemPrompt(): Promise<string> {
       const ruleFileContent = (await fs.readFile(clineRulesFilePath, "utf8")).trim();
       if (ruleFileContent) {
         clineRulesInstructions = `# .clinerules\n\nThe following instructions are provided by the .clinerules file for this working directory (${state.workspaceFolder}):\n\n${ruleFileContent}`;
-        console.log("[buildSystemPrompt] .clinerulesの内容を取得しました。");
       }
     } catch (error) {
-      console.error(`[buildSystemPrompt] .clinerulesファイルの読み込みに失敗しました: ${clineRulesFilePath}`, error);
-    }
+      console.error("[buildSystemPrompt] .clinerulesファイルの読み込み中にエラーが発生しました。", error);}
   }
 
   // ユーザー設定および.clinerulesの内容をプロンプトに追加
   if (customInstructions || clineRulesInstructions) {
     prompt += addUserInstructions(customInstructions, clineRulesInstructions);
-    console.log("[buildSystemPrompt] ユーザー指示をシステムプロンプトに追加しました。");
   }
   return prompt;
 }
@@ -83,6 +76,7 @@ async function trimHistoryIfNeeded(previousApiReqIndex: number): Promise<void> {
 
   const previousRequest = state.clineMessages[previousApiReqIndex];
   if (previousRequest?.text) {
+    console.log(JSON.parse(previousRequest.text))
     const { tokensIn, tokensOut, cacheWrites, cacheReads }: ClineApiReqInfo = JSON.parse(previousRequest.text);
     const totalTokens = (tokensIn || 0) + (tokensOut || 0) + (cacheWrites || 0) + (cacheReads || 0);
 
@@ -137,20 +131,11 @@ export async function* attemptApiRequest(
     const firstChunk = await iterator.next();
     yield firstChunk.value;
     state.isWaitingForFirstChunk = false;
-  } catch (error) {
+  } catch {
     const isOpenRouter = apiStateManager.getState() instanceof OpenRouterHandler;
     if (isOpenRouter && !state.didAutomaticallyRetryFailedApiRequest) {
       await delay(1000);
       state.didAutomaticallyRetryFailedApiRequest = true;
-    } else {
-      const { response } = await ask(
-        Ask.API_REQ_FAILED,
-        error.message ?? JSON.stringify(serializeError(error), null, 2)
-      );
-      if (response !== "yesButtonClicked") {
-        throw new Error("API request failed");
-      }
-      await say(Say.API_REQ_RETRIED);
     }
     yield* attemptApiRequest(previousApiReqIndex);
     return;

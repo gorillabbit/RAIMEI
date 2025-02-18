@@ -36,7 +36,6 @@ async function main() {
     const instruction = process.argv[3]
     globalStateManager.state.workspaceFolder = workspaceFolder
     if (process.argv.length > 4) {
-      console.log('APIプロバイダを設定します', process.argv.length)
       const apiProvider = process.argv[4]
       await setConfig({ apiProvider: apiProvider as ApiProvider })
     }

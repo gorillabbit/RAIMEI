@@ -37,8 +37,7 @@ import {
   
 	// 解析対象文字列を蓄積するバッファ
 	let accumulator = "";
-  
-	console.log("1:[parseAssistantMessage] 開始: メッセージの解析を行います。");
+
 	for (let i = 0; i < assistantMessage.length; i++) {
 		const char = assistantMessage[i];
 		accumulator += char;
@@ -56,9 +55,6 @@ import {
 			currentToolUse.params[currentParamName] = currentParamValue
 				.slice(0, -paramClosingTag.length)
 				.trim();
-			console.log(
-				`2:[parseAssistantMessage] パラメータ終了検出: ${currentParamName} => ${currentToolUse.params[currentParamName]}`
-			);
 			currentParamName = undefined;
 			continue;
 			} else {
@@ -80,9 +76,6 @@ import {
 			// ツール利用の終了
 			currentToolUse.partial = false;
 			contentBlocks.push(currentToolUse);
-			console.log(
-				`3:[parseAssistantMessage] ツール利用終了検出: ${currentToolUse.name}`
-			);
 			currentToolUse = undefined;
 			continue;
 			} else {
@@ -93,9 +86,6 @@ import {
 				// パラメータ開始を検出
 				currentParamName = paramOpeningTag.slice(1, -1) as ToolParamName;
 				currentParamValueStartIndex = accumulator.length;
-				console.log(
-					`4:[parseAssistantMessage] パラメータ開始検出: ${currentParamName}`
-				);
 				break;
 				}
 			}
@@ -123,9 +113,6 @@ import {
 				currentToolUse.params[contentParamName] = toolContent
 					.slice(contentStartIndex, contentEndIndex)
 					.trim();
-				console.log(
-					`5:[parseAssistantMessage] write_to_file用のcontentパラメータを確定: ${currentToolUse.params[contentParamName]}`
-				);
 				}
 			}
 	
@@ -159,15 +146,8 @@ import {
 				.slice(0, -toolUseOpeningTag.slice(0, -1).length)
 				.trim();
 				contentBlocks.push(currentTextContent);
-				console.log(
-				`6:[parseAssistantMessage] テキストブロックを確定: "${currentTextContent.content}"`
-				);
 				currentTextContent = undefined;
 			}
-	
-			console.log(
-				`7:[parseAssistantMessage] ツール利用開始検出: ${currentToolUse.name}`
-			);
 			didStartToolUse = true;
 			break;
 			}
@@ -197,25 +177,14 @@ import {
 			currentToolUse.params[currentParamName] = accumulator
 			.slice(currentParamValueStartIndex)
 			.trim();
-			console.log(
-			`8:[parseAssistantMessage] ループ終了時の未完パラメータを格納: ${currentParamName} => ${currentToolUse.params[currentParamName]}`
-			);
 		}
 		contentBlocks.push(currentToolUse);
-		console.log(
-			`9:[parseAssistantMessage] ループ終了時に未完ツールを追加: ${currentToolUse.name}`
-		);
 		}
 	
 		// 未完のテキストブロックがあれば追加
 		if (currentTextContent) {
 		contentBlocks.push(currentTextContent);
-		console.log(
-			`10:[parseAssistantMessage] ループ終了時に未完テキストを追加: "${currentTextContent.content}"`
-		);
 		}
-	
-		console.log("11:[parseAssistantMessage] 完了: 解析結果を返します。", contentBlocks);
 		return contentBlocks;
 	};
 	

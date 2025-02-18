@@ -18,13 +18,10 @@ function lineTrimmedFallbackMatch(
 	// オリジナルと検索コンテンツを行ごとに分割
 	const originalLines = originalContent.split("\n")
 	const searchLines = searchContent.split("\n")
-	console.log("[lineTrimmedFallbackMatch] originalLines:", originalLines)
-	console.log("[lineTrimmedFallbackMatch] searchLines:", searchLines)
 
 	// 検索コンテンツの末尾に空行がある場合、削除する（末尾の \n による空行）
 	if (searchLines[searchLines.length - 1] === "") {
 		searchLines.pop()
-		console.log("[lineTrimmedFallbackMatch] 空行を削除後の searchLines:", searchLines)
 	}
 
 	// startIndex がどの行に該当するかを計算する
@@ -34,7 +31,6 @@ function lineTrimmedFallbackMatch(
 		currentIndex += originalLines[startLineNum].length + 1 // 改行分 +1
 		startLineNum++
 	}
-	console.log("[lineTrimmedFallbackMatch] 検索開始行番号:", startLineNum)
 
 	// オリジナルコンテンツ内の各開始位置から検索行ブロックが一致するか試す
 	for (let i = startLineNum; i <= originalLines.length - searchLines.length; i++) {
@@ -61,12 +57,10 @@ function lineTrimmedFallbackMatch(
 			for (let k = 0; k < searchLines.length; k++) {
 				matchEndIndex += originalLines[i + k].length + 1 // 改行分 +1
 			}
-			console.log("[lineTrimmedFallbackMatch] マッチ発見: 開始位置=", matchStartIndex, " 終了位置=", matchEndIndex)
 			return [matchStartIndex, matchEndIndex]
 		}
 	}
 
-	console.log("[lineTrimmedFallbackMatch] マッチなし")
 	return false
 }
 
@@ -91,19 +85,14 @@ function blockAnchorFallbackMatch(
 	const originalLines = originalContent.split("\n")
 	const searchLines = searchContent.split("\n")
 
-	console.log("[blockAnchorFallbackMatch] originalLines:", originalLines)
-	console.log("[blockAnchorFallbackMatch] searchLines:", searchLines)
-
 	// 3 行未満のブロックの場合は、この方法は使用しない
 	if (searchLines.length < 3) {
-		console.log("[blockAnchorFallbackMatch] searchLines.length < 3")
 		return false
 	}
 
 	// 末尾の空行があれば削除する
 	if (searchLines[searchLines.length - 1] === "") {
 		searchLines.pop()
-		console.log("[blockAnchorFallbackMatch] 空行を削除後の searchLines:", searchLines)
 	}
 
 	const firstLineSearch = searchLines[0].trim()
@@ -117,7 +106,6 @@ function blockAnchorFallbackMatch(
 		currentIndex += originalLines[startLineNum].length + 1
 		startLineNum++
 	}
-	console.log("[blockAnchorFallbackMatch] 検索開始行番号:", startLineNum)
 
 	// 最初と最後のアンカー行が一致する箇所を探す
 	for (let i = startLineNum; i <= originalLines.length - searchBlockSize; i++) {
@@ -141,12 +129,8 @@ function blockAnchorFallbackMatch(
 		for (let k = 0; k < searchBlockSize; k++) {
 			matchEndIndex += originalLines[i + k].length + 1
 		}
-
-		console.log("[blockAnchorFallbackMatch] マッチ発見: 開始位置=", matchStartIndex, " 終了位置=", matchEndIndex)
 		return [matchStartIndex, matchEndIndex]
 	}
-
-	console.log("[blockAnchorFallbackMatch] マッチなし")
 	return false
 }
 
@@ -210,7 +194,6 @@ export async function constructNewFileContent(
 	let lastProcessedIndex = 0
 
 	let currentSearchContent = ""
-	let currentReplaceContent = ""
 	let inSearch = false
 	let inReplace = false
 
@@ -218,7 +201,6 @@ export async function constructNewFileContent(
 	let searchEndIndex = -1
 
 	const lines = diffContent.split("\n")
-	console.log("[constructNewFileContent] diffContent 行数:", lines.length)
 
 	// チャンクの最終行が不完全なマーカーの場合、削除する
 	const lastLine = lines[lines.length - 1]
@@ -229,33 +211,20 @@ export async function constructNewFileContent(
 		lastLine !== "=======" &&
 		lastLine !== ">>>>>>> REPLACE"
 	) {
-		console.log("[constructNewFileContent] 不完全なマーカー行を削除:", lastLine)
 		lines.pop()
 	}
 
 	// 行ごとに処理
 	for (const line of lines) {
 		if (line === "<<<<<<< SEARCH") {
-			console.log("[constructNewFileContent] '<<<<< SEARCH' を検出")
 			inSearch = true
 			currentSearchContent = ""
-			currentReplaceContent = ""
 			continue
 		}
 
 		if (line === "=======") {
-			console.log("[constructNewFileContent] '=======' を検出。SEARCH セクション終了、REPLACE セクション開始")
 			inSearch = false
 			inReplace = true
-
-			// currentSearchContent の末尾改行の処理（必要に応じて削除する場合は下記コメントを参照）
-			/*
-			if (currentSearchContent.endsWith("\r\n")) {
-				currentSearchContent = currentSearchContent.slice(0, -2)
-			} else if (currentSearchContent.endsWith("\n")) {
-				currentSearchContent = currentSearchContent.slice(0, -1)
-			}
-			*/
 
 			if (!currentSearchContent) {
 				// SEARCH セクションが空の場合
@@ -263,12 +232,10 @@ export async function constructNewFileContent(
 					// 新規ファイル作成シナリオ
 					searchMatchIndex = 0
 					searchEndIndex = 0
-					console.log("[constructNewFileContent] 空の SEARCH ブロック（新規ファイル）")
 				} else {
 					// 完全なファイル置換シナリオ
 					searchMatchIndex = 0
 					searchEndIndex = originalContent.length
-					console.log("[constructNewFileContent] 空の SEARCH ブロック（ファイル全体置換）")
 				}
 			} else {
 				// 完全一致による検索
@@ -276,19 +243,16 @@ export async function constructNewFileContent(
 				if (exactIndex !== -1) {
 					searchMatchIndex = exactIndex
 					searchEndIndex = exactIndex + currentSearchContent.length
-					console.log("[constructNewFileContent] 完全一致発見: 開始=", searchMatchIndex, " 終了=", searchEndIndex)
 				} else {
 					// 行トリム一致の試行
 					const lineMatch = lineTrimmedFallbackMatch(originalContent, currentSearchContent, lastProcessedIndex)
 					if (lineMatch) {
 						[searchMatchIndex, searchEndIndex] = lineMatch
-						console.log("[constructNewFileContent] 行トリム一致発見: 開始=", searchMatchIndex, " 終了=", searchEndIndex)
 					} else {
 						// ブロックアンカー一致の試行
 						const blockMatch = blockAnchorFallbackMatch(originalContent, currentSearchContent, lastProcessedIndex)
 						if (blockMatch) {
 							[searchMatchIndex, searchEndIndex] = blockMatch
-							console.log("[constructNewFileContent] ブロックアンカー一致発見: 開始=", searchMatchIndex, " 終了=", searchEndIndex)
 						} else {
 							throw new Error(
 								`SEARCH ブロック:\n${currentSearchContent.trimEnd()}\n...がファイル内のどこにもマッチしませんでした。`
@@ -300,12 +264,10 @@ export async function constructNewFileContent(
 
 			// マッチ位置までのオリジナル内容を結果に追加
 			result += originalContent.slice(lastProcessedIndex, searchMatchIndex)
-			console.log("[constructNewFileContent] 結果に追加: 文字位置", lastProcessedIndex, "から", searchMatchIndex)
 			continue
 		}
 
 		if (line === ">>>>>>> REPLACE") {
-			console.log("[constructNewFileContent] '>>>>>>> REPLACE' を検出。置換ブロック終了")
 			// ひとつの置換ブロックが終了したので、処理位置を更新する
 			lastProcessedIndex = searchEndIndex
 
@@ -313,7 +275,6 @@ export async function constructNewFileContent(
 			inSearch = false
 			inReplace = false
 			currentSearchContent = ""
-			currentReplaceContent = ""
 			searchMatchIndex = -1
 			searchEndIndex = -1
 			continue
@@ -323,12 +284,9 @@ export async function constructNewFileContent(
 		if (inSearch) {
 			currentSearchContent += line + "\n"
 		} else if (inReplace) {
-			currentReplaceContent += line + "\n"
-			console.log("[constructNewFileContent] 置換行を蓄積:", currentReplaceContent)
 			// 置換内容は、マッチ位置がわかっている場合、逐次結果に追加する
 			if (searchMatchIndex !== -1) {
 				result += line + "\n"
-				console.log("[constructNewFileContent] 置換行を追加:", line)
 			}
 		}
 	}
@@ -336,9 +294,6 @@ export async function constructNewFileContent(
 	// 最終チャンクの場合、最後のマッチ位置以降のオリジナル内容を結果に追加する
 	if (isFinal && lastProcessedIndex < originalContent.length) {
 		result += originalContent.slice(lastProcessedIndex)
-		console.log("[constructNewFileContent] 最終更新: 結果に残りを追加、位置", lastProcessedIndex, "以降")
 	}
-
-	console.log("[constructNewFileContent] 最終結果の長さ:", result.length)
 	return result
 }

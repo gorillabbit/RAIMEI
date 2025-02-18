@@ -79,10 +79,6 @@ export const ask = async (
         lastMessage.text = text;
         lastMessage.partial = true; // 既に true だが念のため
         updateLastClineMessage(lastMessage);
-        console.log("Partial message updated:", {
-          type: "partialMessage",
-          partialMessage: lastMessage,
-        });
         if (text) {
           // テキストがある場合は応答を求める
           clearAskResponse();

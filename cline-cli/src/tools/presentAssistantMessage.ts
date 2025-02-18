@@ -33,26 +33,16 @@ export const presentAssistantMessage = async () => {
         throw new Error("Workspace folder not set")
     }
 
-    console.log("1:[presentAssistantMessage] 開始", {
-        locked: state.presentAssistantMessageLocked,
-        pendingUpdates: state.presentAssistantMessageHasPendingUpdates,
-        index: state.currentStreamingContentIndex,
-    }); // ログ: 関数実行開始
-
     // タスク中止が指定されている場合はエラーを投げる
     if (state.abort) {
-        console.log("中断フラグが立っているため、処理を停止します。")
         throw new Error("Cline instance aborted")
     }
 
     // メッセージ提示処理がロックされている場合は、更新をフラグに記録して終了
     if (state.presentAssistantMessageLocked) {
-        console.log("2:[presentAssistantMessage] presentAssistantMessageLockedがtrueのため、更新を保留します。")
-        console.log("Setting presentAssistantMessageHasPendingUpdates to true");
         state.presentAssistantMessageHasPendingUpdates = true
         return
     }
-    console.log("Setting presentAssistantMessageLocked to true");
     state.presentAssistantMessageLocked = true
     state.presentAssistantMessageHasPendingUpdates = false
 
@@ -61,22 +51,17 @@ export const presentAssistantMessage = async () => {
         // ストリーミングが完了している場合、ユーザーメッセージの準備ができたことを示す
         if (state.didCompleteReadingStream) {
             state.userMessageContentReady = true
-            console.log("3:[presentAssistantMessage]ストリーミング完了: ユーザーメッセージの準備完了")
         }
-        console.log("Setting presentAssistantMessageLocked to false");
         state.presentAssistantMessageLocked = false
         return
     }
 
     // ストリーミング中に配列が更新される可能性があるため、ディープコピーを作成
     const block = cloneDeep(state.assistantMessageContent[state.currentStreamingContentIndex])
-    console.log(`4:[presentAssistantMessage]処理中のブロック: `,block)
 
     switch (block.type) {
         case "text": {
-            console.log("Processing text block");
             if (state.didRejectTool || state.didAlreadyUseTool) {
-                console.log("ツールが拒否されたか既に使用済みのため、テキストブロックの処理をスキップ")
                 break
             }
             let content = block.content
@@ -100,7 +85,6 @@ export const presentAssistantMessage = async () => {
                         const isLikelyTagName = /^[a-zA-Z_]+$/.test(tagContent)
                         const isOpeningOrClosing = possibleTag === "<" || possibleTag === "</"
                         if (isOpeningOrClosing || isLikelyTagName) {
-                            console.log("不完全なタグを検出したため削除します。")
                             content = content.slice(0, lastOpenBracketIndex).trim()
                         }
                     }
@@ -120,7 +104,6 @@ export const presentAssistantMessage = async () => {
             break
         }
         case "tool_use": {
-            console.log("Processing tool_use block:", block.name);
             // ツールごとの説明を生成する関数
             const toolDescription = () => {
                 switch (block.name) {
@@ -206,7 +189,6 @@ export const presentAssistantMessage = async () => {
             // エラー発生時の処理
             const handleError = async (action: string, error: Error) => {
                 if (state.abandoned) {
-                    console.log("タスクが中止されたため、エラーを無視します。")
                     return
                 }
                 const errorString = `Error ${action}: ${JSON.stringify(serializeError(error))}`
@@ -349,8 +331,6 @@ export const presentAssistantMessage = async () => {
                                 content: diff || content,
                             } satisfies ClineSayTool)
 
-
-                            console.log(`Tool operation '${block.name}' completed successfully.`);
                             removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
                             await say(Say.TOOL, completeMessage, undefined, false)
                         }
@@ -548,7 +528,6 @@ export const presentAssistantMessage = async () => {
                             await say(Say.COMMAND, command, undefined, false)
 
                             const [result] = await executeCommandTool(command)
-                            console.log(`Tool operation 'execute_command' completed successfully.`);
                             pushToolResult(result)
                             break
                         }
@@ -571,11 +550,6 @@ export const presentAssistantMessage = async () => {
                                 break
                             }
                             state.consecutiveMistakeCount = 0
-
-                            console.log({
-                                subtitle: "Clineからの質問",
-                                message: question.replace(/\n/g, " "),
-                            })
 
                             const { text, images } = await ask(Ask.FOLLOWUP, question, false)
                             await say(Say.USER_FEEDBACK, text ?? "", images)
@@ -670,11 +644,6 @@ export const presentAssistantMessage = async () => {
                             }
                             state.consecutiveMistakeCount = 0
 
-                            console.log({
-                                subtitle: "タスク完了",
-                                message: result.replace(/\n/g, " "),
-                            })
-
                             let commandResult: ToolResponse | undefined
                             if (command) {
                                 if (lastMessage && lastMessage.ask !== "command") {
@@ -695,9 +664,6 @@ export const presentAssistantMessage = async () => {
                             }
 
                             const { response, text, images } = await ask(Ask.COMPLETION_RESULT, "", false)
-                            console.log("ユーザーの完了試行フィードバック: ", response)
-                            console.log("ユーザーの完了試行テキスト: ", text)
-                            console.log("ユーザーの完了試行画像: ", images)
                             if (response === "yesButtonClicked") {
                                 console.log("再帰ループ停止のシグナルを送信します。")
                                 state.taskCompleted = true; // Add this line
@@ -744,29 +710,20 @@ export const presentAssistantMessage = async () => {
     }
 
     // インデックスが範囲外の場合は、ストリーミングが完了しているかチェック
-    console.log("Setting presentAssistantMessageLocked to false");
     state.presentAssistantMessageLocked = false // ロック解除
     if (!block.partial || state.didRejectTool || state.didAlreadyUseTool) {
         if (state.currentStreamingContentIndex === state.assistantMessageContent.length - 1) {
             state.userMessageContentReady = true
-            console.log("[presentAssistantMessage] すべてのブロックの処理が完了しました。")
         }
         // 次のブロックが存在する場合は再帰的に処理を呼び出す
         state.currentStreamingContentIndex++
         if (state.currentStreamingContentIndex < state.assistantMessageContent.length) {
-            console.log(`[presentAssistantMessage] 次のブロック（インデックス: ${state.currentStreamingContentIndex}, ${ state.assistantMessageContent.length}）の処理を再帰的に処理を呼び出し開始します。`, {
-                locked: state.presentAssistantMessageLocked,
-                pendingUpdates: state.presentAssistantMessageHasPendingUpdates,
-                index: state.currentStreamingContentIndex
-            });
             await presentAssistantMessage()
             return
         }
     }
     // 部分的なブロックであっても、更新が保留されていれば再呼び出し
     if (state.presentAssistantMessageHasPendingUpdates) {
-        console.log("[presentAssistantMessage] 保留中の更新があるため、再度presentAssistantMessageを呼び出します。")
         await presentAssistantMessage()
     }
-    console.log("[presentAssistantMessage] 終了") // ログ: 関数実行終了
 }
