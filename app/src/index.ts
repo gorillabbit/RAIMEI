@@ -5,7 +5,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import { once } from 'events';
-import { getIssueContent } from './getIssue';
+import { addLabelToIssue, getIssueContent } from './githubApi';
 
 config(); // Load environment variables from .env
 
@@ -78,9 +78,10 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
             return reply.status(400).send({ error: 'Missing issue data' });
           }
           const issueContent = await getIssueContent(issue.html_url);
-          const issueNumber = extractLastNumber(issue.html_url);
+          const issueNumber = extractLastNumber(issue.html_url) ?? 'なし(本文は空白)';
           if (action === 'opened') {
             console.log(`Issue created: title=${issue.title}, url=${issue.html_url}`);
+            await addLabelToIssue(issue.html_url, ['RAIMEI イシュー記載中']); 
             const command = "npx";
             const args = [
               "node",
@@ -112,7 +113,7 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
             await once(childProcess, 'close');
           
             console.log('Command execution completed.');
-
+          
           } else {
             console.log(`Issue event received: action=${action}, title=${issue?.title}`);
           }
