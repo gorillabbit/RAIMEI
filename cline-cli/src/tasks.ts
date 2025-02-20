@@ -189,72 +189,19 @@ export const overwriteClineMessages = async (newMessages: ClineMessage[]) => {
  * @param {string[]} [images] - 画像URLなどの配列
  * @param {boolean} [partial] - partialフラグ。trueの場合はストリーミング中の未完成メッセージを扱う
  */
-export const say = async (type: Say, text?: string, images?: string, partial?: boolean) => {
+export const say = async (type: Say, text?: string, images?: string) => {
 	const state = globalStateManager.state
-	if (partial !== undefined) {
-		const lastMessage = state.clineMessages.at(-1)
 
-		// 直近のメッセージがpartial状態＆同じtypeの場合は更新を行う
-		const isUpdatingPreviousPartial =
-			lastMessage && lastMessage.partial && lastMessage.type === "say" && lastMessage.say === type
-
-		if (partial) {
-			// partialがtrueの場合
-			if (isUpdatingPreviousPartial) {
-				// 既存のpartialメッセージを更新
-				lastMessage.text = text
-				lastMessage.images = images
-				lastMessage.partial = partial
-			} else {
-				// 新しいpartialメッセージを追加
-				const sayTs = Date.now()
-				state.lastMessageTs = sayTs
-				await addToClineMessages({
-					ts: sayTs,
-					type: MessageType.SAY,
-					say: type,
-					text,
-					images,
-					partial,
-				})
-			}
-		} else {
-			// partialがfalseの場合、既存のpartialメッセージを完成版に置き換える
-			if (isUpdatingPreviousPartial) {
-				// 既存のpartialメッセージを完成形に更新
-				state.lastMessageTs = lastMessage.ts
-				lastMessage.text = text
-				lastMessage.images = images
-				lastMessage.partial = false
-
-				// ディスクに保存
-				// saveClineMessages();
-			} else {
-				// 新しいメッセージとして追加
-				const sayTs = Date.now()
-				state.lastMessageTs = sayTs
-				await addToClineMessages({
-					ts: sayTs,
-					type: MessageType.SAY,
-					say: type,
-					text,
-					partial,
-					images,
-				})
-			}
-		}
-	} else {
-		// partialが指定されていない通常メッセージの場合
-		const sayTs = Date.now()
-		state.lastMessageTs = sayTs
-		await addToClineMessages({
-			ts: sayTs,
-			type: MessageType.SAY,
-			say: type,
-			text,
-			images,
-		})
-	}
+	// partialが指定されていない通常メッセージの場合
+	const sayTs = Date.now()
+	state.lastMessageTs = sayTs
+	await addToClineMessages({
+		ts: sayTs,
+		type: MessageType.SAY,
+		say: type,
+		text,
+		images,
+	})
 }
 
 /**

@@ -1,7 +1,5 @@
-import delay from "delay"
 import path from "path"
 import fs from "fs/promises"
-import { OpenRouterHandler } from "../api/providers/openrouter.js"
 import { OpenAiHandler } from "../api/providers/openai.js"
 import { getTruncatedMessages } from "../clineUtils.js"
 import { GlobalFileNames } from "../const.js"
@@ -12,6 +10,7 @@ import { fileExistsAtPath } from "../utils/fs.js"
 import Anthropic from "@anthropic-ai/sdk"
 import { apiStateManager } from "../apiState.js"
 import { buildApiHandler } from "../api/index.js"
+import { ApiResponse } from "../api/transform/stream.js"
 
 /**
  * APIリクエスト用のシステムプロンプトを構築する
@@ -97,11 +96,11 @@ async function trimHistoryIfNeeded(previousApiReqIndex: number): Promise<void> {
 
 /**
  * attemptApiRequest
- * APIリクエストの最初のチャンク取得を試み、失敗時は自動再試行またはユーザーに再試行可否を問い合わせます。
+ * APIリクエストを取得するための関数
  *
  * @param previousApiReqIndex 前回のAPIリクエストのインデックス
  */
-export async function* attemptApiRequest(previousApiReqIndex: number): AsyncGenerator<unknown, void, unknown> {
+export async function attemptApiRequest(previousApiReqIndex: number): ApiResponse {
 	const state = globalStateManager.state
 	const apiHandler = buildApiHandler(apiStateManager.getState())
 
@@ -114,31 +113,8 @@ export async function* attemptApiRequest(previousApiReqIndex: number): AsyncGene
 	// トリミング済みの会話履歴を取得
 	const truncatedHistory = getTruncatedMessages(state.apiConversationHistory, state.conversationHistoryDeletedRange)
 
-	// ストリーム生成
-	const stream = apiHandler.createMessage(systemPrompt, truncatedHistory)
-	const iterator = stream[Symbol.asyncIterator]()
-
-	// 最初のチャンク取得（失敗時は再試行またはユーザー問い合わせ）
-	try {
-		state.isWaitingForFirstChunk = true
-		const firstChunk = await iterator.next()
-		yield firstChunk.value
-		state.isWaitingForFirstChunk = false
-	} catch {
-		const isOpenRouter = apiStateManager.getState() instanceof OpenRouterHandler
-		if (isOpenRouter && !state.didAutomaticallyRetryFailedApiRequest) {
-			await delay(1000)
-			state.didAutomaticallyRetryFailedApiRequest = true
-		}
-		yield* attemptApiRequest(previousApiReqIndex)
-		return
-	}
-
-	// 最初のチャンク受信後、残りのチャンクを順次出力
-	for await (const chunk of iterator) {
-		console.log("[attemptApiRequest] 次のチャンク", chunk)
-		yield chunk
-	}
+	// レスポンス生成
+	return await apiHandler.createMessage(systemPrompt, truncatedHistory)
 }
 
 /**

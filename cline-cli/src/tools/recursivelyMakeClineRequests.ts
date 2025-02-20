@@ -84,10 +84,11 @@ export const processClineRequests = async (
 		if (state.abort) {
 			break
 		}
-		const isEnd = await processClineRequests(userContent, includeFileDetails)
-		if (isEnd) {
+		console.log("Task completed", state.taskCompleted)
+		if (state.taskCompleted) {
 			return true
 		}
+		await processClineRequests(userContent, includeFileDetails)
 	}
 	return false
 }
@@ -159,7 +160,6 @@ function resetStreamingState(): void {
 	state.presentAssistantMessageLocked = false
 	state.presentAssistantMessageHasPendingUpdates = false
 	state.didAutomaticallyRetryFailedApiRequest = false
-	state.currentStreamingContentIndex = 0
 	state.taskCompleted = false // Add this line
 }
 
@@ -185,31 +185,17 @@ async function processApiStream(): Promise<{
 		// 直近のAPIリクエストのインデックスを取得（トークン使用量を把握し、履歴をトリムするかなどの判定に使用）
 		const previousApiReqIndex = findLastIndex(state.clineMessages, (m) => m.say === "api_req_started")
 
-		const stream = attemptApiRequest(previousApiReqIndex) // async iterator を返す
-		state.isStreaming = true
-
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		for await (const chunk of stream as AsyncGenerator<any, void, unknown>) {
-			if (chunk.type === "usage") {
-				tokenUsage.inputTokens += chunk.inputTokens
-				tokenUsage.outputTokens += chunk.outputTokens
-				tokenUsage.cacheWriteTokens += chunk.cacheWriteTokens ?? 0
-				tokenUsage.cacheReadTokens += chunk.cacheReadTokens ?? 0
-				tokenUsage.totalCost = chunk.totalCost
-			} else if (chunk.type === "text") {
-				assistantMessage += chunk.text
-				state.assistantMessageContent = parseAssistantMessage(assistantMessage)
-				await presentAssistantMessage()
-			}
-			// 中断条件（abort, ユーザーによるツール拒否、既にツール使用済み）をチェック
-			if (state.abort || state.didAlreadyUseTool) {
-				break
-			}
-		}
+		const response = await attemptApiRequest(previousApiReqIndex)
+		tokenUsage.inputTokens += response.usage.inputTokens
+		tokenUsage.outputTokens += response.usage.outputTokens
+		tokenUsage.cacheWriteTokens += response.usage.cacheWriteTokens ?? 0
+		tokenUsage.cacheReadTokens += response.usage.cacheReadTokens ?? 0
+		assistantMessage = response.text
+		state.assistantMessageContent = parseAssistantMessage(assistantMessage)
+		await presentAssistantMessage()
 	} catch (error) {
 		return { assistantMessage, tokenUsage, error }
 	} finally {
-		state.isStreaming = false
 		state.didCompleteReadingStream = true
 	}
 	await finalizePartialBlocks()

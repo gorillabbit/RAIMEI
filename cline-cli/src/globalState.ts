@@ -28,8 +28,6 @@ export interface GlobalState {
 	customInstructions?: string
 
 	// streaming
-	isWaitingForFirstChunk: boolean
-	isStreaming: boolean
 	currentStreamingContentIndex: number
 	assistantMessageContent: AssistantMessageContent[]
 	presentAssistantMessageLocked: boolean
@@ -62,8 +60,6 @@ class GlobalStateManager {
 		abort: false,
 		consecutiveMistakeCount: 0,
 		didFinishAbortingStream: false,
-		isWaitingForFirstChunk: false,
-		isStreaming: false,
 		currentStreamingContentIndex: 0,
 		assistantMessageContent: [],
 		presentAssistantMessageLocked: false,
