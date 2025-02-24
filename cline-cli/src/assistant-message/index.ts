@@ -5,7 +5,6 @@ export { parseAssistantMessage } from "./parse-assistant-message.js"
 export interface TextContent {
 	type: "text"
 	content: string
-	partial: boolean
 }
 
 export const toolUseNames = [
@@ -58,7 +57,6 @@ export interface ToolUse {
 	name: ToolUseName
 	// params is a partial record, allowing only some or none of the possible parameters to be used
 	params: Partial<Record<ToolParamName, string>>
-	partial: boolean
 }
 
 export interface ExecuteCommandToolUse extends ToolUse {

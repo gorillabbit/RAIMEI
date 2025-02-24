@@ -39,6 +39,11 @@ export const presentAssistantMessage = async () => {
 		throw new Error("Cline instance aborted")
 	}
 
+	if (state.taskCompleted) {
+		console.log("Task completed", state.taskCompleted)
+		return
+	}
+
 	// メッセージ提示処理がロックされている場合は、更新をフラグに記録して終了
 	if (state.presentAssistantMessageLocked) {
 		state.presentAssistantMessageHasPendingUpdates = true
@@ -58,11 +63,15 @@ export const presentAssistantMessage = async () => {
 	}
 
 	// ストリーミング中に配列が更新される可能性があるため、ディープコピーを作成
+	console.log("state.assistantMessageContent", state.assistantMessageContent)
 	const block = cloneDeep(state.assistantMessageContent[state.currentStreamingContentIndex])
-
+	console.log("block", block)
+for (const block of state.assistantMessageContent) {
+		// ブロックの種類に応じて処理を分岐
 	switch (block.type) {
 		case "text": {
 			if (state.didAlreadyUseTool) {
+				console.log("ツールが既に使用されているため、テキストブロックをスキップします。")
 				break
 			}
 			let content = block.content
@@ -93,15 +102,13 @@ export const presentAssistantMessage = async () => {
 			}
 
 			// 部分的なブロックでない場合、コードブロックのアーティファクトを削除
-			if (!block.partial) {
-				const match = content?.trimEnd().match(/```[a-zA-Z0-9_-]+$/)
-				if (match) {
-					const matchLength = match[0].length
-					content = content.trimEnd().slice(0, -matchLength)
-				}
+			const match = content?.trimEnd().match(/```[a-zA-Z0-9_-]+$/)
+			if (match) {
+				const matchLength = match[0].length
+				content = content.trimEnd().slice(0, -matchLength)
 			}
 
-			await say(Say.TEXT, content, undefined, block.partial)
+			await say(Say.TEXT, content, undefined)
 			break
 		}
 		case "tool_use": {
@@ -170,7 +177,7 @@ export const presentAssistantMessage = async () => {
 
 			// ツール使用前にユーザーに承認を求める関数
 			const askApproval = async (type: Ask, partialMessage?: string) => {
-				await ask(type, partialMessage, false)
+				await ask(type, partialMessage)
 				return true
 			}
 
@@ -186,20 +193,7 @@ export const presentAssistantMessage = async () => {
 
 			// 部分的なブロックの場合、閉じタグを削除
 			const removeClosingTag = (tag: ToolParamName, text?: string) => {
-				if (!block.partial) {
-					return text || ""
-				}
-				if (!text) {
-					return ""
-				}
-				const tagRegex = new RegExp(
-					`\\s?</?${tag
-						.split("")
-						.map((char) => `(?:${char})?`)
-						.join("")}$`,
-					"g",
-				)
-				return text.replace(tagRegex, "")
+				return text || ""
 			}
 
 			// 各ツール名ごとの処理分岐
@@ -226,7 +220,7 @@ export const presentAssistantMessage = async () => {
 						await saveCheckpoint()
 						break
 					}
-					await say(Say.TOOL, `Issue ${issueNumber} を編集します。`, undefined, block.partial)
+					await say(Say.TOOL, `Issue ${issueNumber} を編集します。`, undefined)
 					break
 				}
 				case "write_to_file":
@@ -259,7 +253,7 @@ export const presentAssistantMessage = async () => {
 								newContent = await constructNewFileContent(
 									diff,
 									genericDiffProvider.originalContent || "",
-									!block.partial,
+									true,
 								)
 							} catch (error) {
 								await say(Say.DIFF_ERROR, relPath)
@@ -297,54 +291,40 @@ export const presentAssistantMessage = async () => {
 							content: diff || content,
 						}
 
-						if (block.partial) {
-							const partialMessage = JSON.stringify(sharedMessageProps)
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
-							await say(Say.TOOL, partialMessage, undefined, block.partial)
-							// update editor
-							if (!genericDiffProvider.isEditing) {
-								// open the editor and prepare to stream content in
-								await genericDiffProvider.open(relPath)
-							}
-							// editor is open, stream content in
-							await genericDiffProvider.update(newContent)
+						if (!relPath) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError(block.name, "path"))
+							await saveCheckpoint()
 							break
-						} else {
-							if (!relPath) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError(block.name, "path"))
-								await saveCheckpoint()
-								break
-							}
-							if (block.name === "replace_in_file" && !diff) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("replace_in_file", "diff"))
-								await saveCheckpoint()
-								break
-							}
-							if (block.name === "write_to_file" && !content) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("write_to_file", "content"))
-								await saveCheckpoint()
-								break
-							}
-							state.consecutiveMistakeCount = 0
-							if (!genericDiffProvider.isEditing) {
-								// show gui message before showing edit animation
-								const partialMessage = JSON.stringify(sharedMessageProps)
-								await ask(Ask.TOOL, partialMessage, true).catch(() => {}) // sending true for partial even though it's not a partial, this shows the edit row before the content is streamed into the editor
-								await genericDiffProvider.open(relPath) // updated to use genericDiffProvider
-							}
-							await genericDiffProvider.update(newContent) // updated to use genericDiffProvider
-
-							const completeMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: diff || content,
-							} satisfies ClineSayTool)
-
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
-							await say(Say.TOOL, completeMessage, undefined, false)
 						}
+						if (block.name === "replace_in_file" && !diff) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("replace_in_file", "diff"))
+							await saveCheckpoint()
+							break
+						}
+						if (block.name === "write_to_file" && !content) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("write_to_file", "content"))
+							await saveCheckpoint()
+							break
+						}
+						state.consecutiveMistakeCount = 0
+						if (!genericDiffProvider.isEditing) {
+							// show gui message before showing edit animation
+							const partialMessage = JSON.stringify(sharedMessageProps)
+							await ask(Ask.TOOL, partialMessage).catch(() => {}) // sending true for partial even though it's not a partial, this shows the edit row before the content is streamed into the editor
+							await genericDiffProvider.open(relPath) // updated to use genericDiffProvider
+						}
+						await genericDiffProvider.update(newContent) // updated to use genericDiffProvider
+
+						const completeMessage = JSON.stringify({
+							...sharedMessageProps,
+							content: diff || content,
+						} satisfies ClineSayTool)
+
+						removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
+						await say(Say.TOOL, completeMessage, undefined)
 					} catch (error) {
 						await handleError("ファイル書き込み", error)
 						break
@@ -361,33 +341,23 @@ export const presentAssistantMessage = async () => {
 						path: getReadablePath(state.workspaceFolder, removeClosingTag("path", relPath)),
 					}
 					try {
-						if (block.partial) {
-							const partialMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: undefined,
-							} satisfies ClineSayTool)
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
-							await say(Say.TOOL, partialMessage, undefined, block.partial)
-							break
-						} else {
-							if (!relPath) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("read_file", "path"))
-								break
-							}
-							state.consecutiveMistakeCount = 0
-							const absolutePath = path.resolve(state.workspaceFolder, relPath)
-							const completeMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: absolutePath,
-							} satisfies ClineSayTool)
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
-							await say(Say.TOOL, completeMessage, undefined, false)
-							// now execute the tool like normal
-							const content = await extractTextFromFile(absolutePath)
-							pushToolResult(content)
+						if (!relPath) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("read_file", "path"))
 							break
 						}
+						state.consecutiveMistakeCount = 0
+						const absolutePath = path.resolve(state.workspaceFolder, relPath)
+						const completeMessage = JSON.stringify({
+							...sharedMessageProps,
+							content: absolutePath,
+						} satisfies ClineSayTool)
+						removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
+						await say(Say.TOOL, completeMessage, undefined)
+						// now execute the tool like normal
+						const content = await extractTextFromFile(absolutePath)
+						pushToolResult(content)
+						break
 					} catch (error) {
 						await handleError("ファイル書き込み", error)
 						break
@@ -402,34 +372,24 @@ export const presentAssistantMessage = async () => {
 						path: getReadablePath(state.workspaceFolder, removeClosingTag("path", relDirPath)),
 					}
 					try {
-						if (block.partial) {
-							const partialMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: "",
-							} satisfies ClineSayTool)
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
-							await say(Say.TOOL, partialMessage, undefined, block.partial)
-							break
-						} else {
-							if (!relDirPath) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("list_files", "path"))
-								await saveCheckpoint()
-								break
-							}
-							state.consecutiveMistakeCount = 0
-							const absolutePath = path.resolve(state.workspaceFolder, relDirPath)
-							const [files, didHitLimit] = await listFiles(absolutePath, recursive, 200)
-							const result = formatResponse.formatFilesList(absolutePath, files, didHitLimit)
-							const completeMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: result,
-							} satisfies ClineSayTool)
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
-							await say(Say.TOOL, completeMessage, undefined, false)
-							pushToolResult(result)
+						if (!relDirPath) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("list_files", "path"))
+							await saveCheckpoint()
 							break
 						}
+						state.consecutiveMistakeCount = 0
+						const absolutePath = path.resolve(state.workspaceFolder, relDirPath)
+						const [files, didHitLimit] = await listFiles(absolutePath, recursive, 200)
+						const result = formatResponse.formatFilesList(absolutePath, files, didHitLimit)
+						const completeMessage = JSON.stringify({
+							...sharedMessageProps,
+							content: result,
+						} satisfies ClineSayTool)
+						removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
+						await say(Say.TOOL, completeMessage, undefined)
+						pushToolResult(result)
+						break
 					} catch (error) {
 						await handleError("ファイル書き込み", error)
 						break
@@ -442,32 +402,22 @@ export const presentAssistantMessage = async () => {
 						path: getReadablePath(state.workspaceFolder, removeClosingTag("path", relDirPath)),
 					}
 					try {
-						if (block.partial) {
-							const partialMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: "",
-							} satisfies ClineSayTool)
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
-							await say(Say.TOOL, partialMessage, undefined, block.partial)
-							break
-						} else {
-							if (!relDirPath) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("list_code_definition_names", "path"))
-								break
-							}
-							state.consecutiveMistakeCount = 0
-							const absolutePath = path.resolve(state.workspaceFolder, relDirPath)
-							const result = await parseSourceCodeForDefinitionsTopLevel(absolutePath)
-							const completeMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: result,
-							} satisfies ClineSayTool)
-							removeLastPartialMessageIfExistsWithType(MessageType.SAY, Say.TOOL)
-							await say(Say.TOOL, completeMessage, undefined, false)
-							pushToolResult(result)
+						if (!relDirPath) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("list_code_definition_names", "path"))
 							break
 						}
+						state.consecutiveMistakeCount = 0
+						const absolutePath = path.resolve(state.workspaceFolder, relDirPath)
+						const result = await parseSourceCodeForDefinitionsTopLevel(absolutePath)
+						const completeMessage = JSON.stringify({
+							...sharedMessageProps,
+							content: result,
+						} satisfies ClineSayTool)
+						removeLastPartialMessageIfExistsWithType(MessageType.SAY, Say.TOOL)
+						await say(Say.TOOL, completeMessage, undefined)
+						pushToolResult(result)
+						break
 					} catch (error) {
 						await handleError("ファイル書き込み", error)
 						break
@@ -484,38 +434,28 @@ export const presentAssistantMessage = async () => {
 						filePattern: removeClosingTag("file_pattern", filePattern),
 					}
 					try {
-						if (block.partial) {
-							const partialMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: "",
-							} satisfies ClineSayTool)
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
-							await say(Say.TOOL, partialMessage, undefined, block.partial)
-							break
-						} else {
-							if (!relDirPath) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("search_files", "path"))
-								break
-							}
-							if (!regex) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("search_files", "regex"))
-								await saveCheckpoint()
-								break
-							}
-							state.consecutiveMistakeCount = 0
-							const absolutePath = path.resolve(state.workspaceFolder, relDirPath)
-							const results = await regexSearchFiles(state.workspaceFolder, absolutePath, regex, filePattern)
-							const completeMessage = JSON.stringify({
-								...sharedMessageProps,
-								content: results,
-							} satisfies ClineSayTool)
-							removeLastPartialMessageIfExistsWithType(MessageType.SAY, Say.TOOL)
-							await say(Say.TOOL, completeMessage, undefined, false)
-							pushToolResult(results)
+						if (!relDirPath) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("search_files", "path"))
 							break
 						}
+						if (!regex) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("search_files", "regex"))
+							await saveCheckpoint()
+							break
+						}
+						state.consecutiveMistakeCount = 0
+						const absolutePath = path.resolve(state.workspaceFolder, relDirPath)
+						const results = await regexSearchFiles(state.workspaceFolder, absolutePath, regex, filePattern)
+						const completeMessage = JSON.stringify({
+							...sharedMessageProps,
+							content: results,
+						} satisfies ClineSayTool)
+						removeLastPartialMessageIfExistsWithType(MessageType.SAY, Say.TOOL)
+						await say(Say.TOOL, completeMessage, undefined)
+						pushToolResult(results)
+						break
 					} catch (error) {
 						await handleError("ファイル書き込み", error)
 						break
@@ -524,24 +464,20 @@ export const presentAssistantMessage = async () => {
 				case "execute_command": {
 					const command: string | undefined = block.params.command
 					try {
-						if (block.partial) {
-							break
-						} else {
-							if (!command) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("execute_command", "command"))
-								await saveCheckpoint()
-								break
-							}
-							state.consecutiveMistakeCount = 0
-
-							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.COMMAND)
-							await say(Say.COMMAND, command, undefined, false)
-
-							const [result] = await executeCommandTool(command)
-							pushToolResult(result)
+						if (!command) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("execute_command", "command"))
+							await saveCheckpoint()
 							break
 						}
+						state.consecutiveMistakeCount = 0
+
+						removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.COMMAND)
+						await say(Say.COMMAND, command, undefined)
+
+						const [result] = await executeCommandTool(command)
+						pushToolResult(result)
+						break
 					} catch (error) {
 						await handleError("コマンド実行", error)
 						break
@@ -550,24 +486,19 @@ export const presentAssistantMessage = async () => {
 				case "ask_followup_question": {
 					const question: string | undefined = block.params.question
 					try {
-						if (block.partial) {
-							await ask(Ask.FOLLOWUP, removeClosingTag("question", question), block.partial).catch(() => {})
-							break
-						} else {
-							if (!question) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("ask_followup_question", "question"))
-								await saveCheckpoint()
-								break
-							}
-							state.consecutiveMistakeCount = 0
-
-							const { text, images } = await ask(Ask.FOLLOWUP, question, false)
-							await say(Say.USER_FEEDBACK, text ?? "", images)
-							pushToolResult(formatResponse.toolResult(`<answer>\n${text}\n</answer>`, images))
+						if (!question) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("ask_followup_question", "question"))
 							await saveCheckpoint()
 							break
 						}
+						state.consecutiveMistakeCount = 0
+
+						const { text, images } = await ask(Ask.FOLLOWUP, question)
+						await say(Say.USER_FEEDBACK, text ?? "", images)
+						pushToolResult(formatResponse.toolResult(`<answer>\n${text}\n</answer>`, images))
+						await saveCheckpoint()
+						break
 					} catch (error) {
 						await handleError("質問送信", error)
 						await saveCheckpoint()
@@ -577,40 +508,34 @@ export const presentAssistantMessage = async () => {
 				case "plan_mode_response": {
 					const response: string | undefined = block.params.response
 					try {
-						if (block.partial) {
-							await ask(Ask.PLAN_MODE_RESPONSE, removeClosingTag("response", response), block.partial).catch(
-								() => {},
-							)
-							break
-						} else {
-							if (!response) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("plan_mode_response", "response"))
-								break
-							}
-							state.isAwaitingPlanResponse = true
-							const { text, images } = await ask(Ask.PLAN_MODE_RESPONSE, response, false)
-							state.isAwaitingPlanResponse = false
-
-							if (state.didRespondToPlanAskBySwitchingMode) {
-								pushToolResult(
-									formatResponse.toolResult(
-										`[ユーザーがACT MODEに切り替えたため、タスクを継続してください。]`,
-										images,
-									),
-								)
-							} else {
-								await say(Say.USER_FEEDBACK, text ?? "", images)
-								pushToolResult(formatResponse.toolResult(`<user_message>\n${text}\n</user_message>`, images))
-							}
+						if (!response) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("plan_mode_response", "response"))
 							break
 						}
+						state.isAwaitingPlanResponse = true
+						const { text, images } = await ask(Ask.PLAN_MODE_RESPONSE, response)
+						state.isAwaitingPlanResponse = false
+
+						if (state.didRespondToPlanAskBySwitchingMode) {
+							pushToolResult(
+								formatResponse.toolResult(
+									`[ユーザーがACT MODEに切り替えたため、タスクを継続してください。]`,
+									images,
+								),
+							)
+						} else {
+							await say(Say.USER_FEEDBACK, text ?? "", images)
+							pushToolResult(formatResponse.toolResult(`<user_message>\n${text}\n</user_message>`, images))
+						}
+						break
 					} catch (error) {
 						await handleError("プランモード応答", error)
 						break
 					}
 				}
 				case "attempt_completion": {
+					console.log("block.params.result", block.params.result)
 					const result: string | undefined = block.params.result
 					const command: string | undefined = block.params.command
 
@@ -629,84 +554,69 @@ export const presentAssistantMessage = async () => {
 
 					try {
 						const lastMessage = state.clineMessages.at(-1)
-						if (block.partial) {
-							if (command) {
-								if (lastMessage && lastMessage.ask === "command") {
-									await ask(Ask.COMMAND, removeClosingTag("command", command), block.partial).catch(() => {})
-								} else {
-									await say(Say.COMPLETION_RESULT, removeClosingTag("result", result), undefined, false)
-									await saveCheckpoint()
-									await addNewChangesFlagToLastCompletionResultMessage()
-									await ask(Ask.COMMAND, removeClosingTag("command", command), block.partial).catch(() => {})
-								}
-							} else {
-								await say(Say.COMPLETION_RESULT, removeClosingTag("result", result), undefined, block.partial)
-							}
-							break
-						} else {
-							if (!result) {
-								state.consecutiveMistakeCount++
-								pushToolResult(await sayAndCreateMissingParamError("attempt_completion", "result"))
-								await saveCheckpoint()
-								break
-							}
-							state.consecutiveMistakeCount = 0
 
-							let commandResult: ToolResponse | undefined
-							if (command) {
-								if (lastMessage && lastMessage.ask !== "command") {
-									await say(Say.COMPLETION_RESULT, result, undefined, false)
-									await saveCheckpoint()
-									await addNewChangesFlagToLastCompletionResultMessage()
-								} else {
-									await saveCheckpoint()
-								}
-
-								await askApproval(Ask.COMMAND, command)
-								const [execCommandResult] = await executeCommandTool(command!)
-								commandResult = execCommandResult
-							} else {
-								await say(Say.COMPLETION_RESULT, result, undefined, false)
-								await saveCheckpoint()
-								await addNewChangesFlagToLastCompletionResultMessage()
-							}
-
-							const { response, text, images } = await ask(Ask.COMPLETION_RESULT, "", false)
-							if (response === "yesButtonClicked") {
-								console.log("再帰ループ停止のシグナルを送信します。")
-								state.taskCompleted = true // Add this line
-								pushToolResult("") // 再帰ループ停止のシグナル
-								break
-							}
-							await say(Say.USER_FEEDBACK, text ?? "", images)
-
-							const toolResults: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam)[] = []
-							if (commandResult) {
-								if (typeof commandResult === "string") {
-									toolResults.push({
-										type: "text",
-										text: commandResult,
-									})
-								} else if (Array.isArray(commandResult)) {
-									toolResults.push(...commandResult)
-								}
-							}
-							toolResults.push({
-								type: "text",
-								text: `ユーザーからフィードバックが提供されました。フィードバックを参考にタスクを継続し、再度完了を試みてください。\n<feedback>\n${text}\n</feedback>`,
-							})
-							toolResults.push(...formatResponse.imageBlocks(images))
-							const message = state.userMessageContent
-							state.userMessageContent = [
-								...message,
-								{
-									type: "text",
-									text: `タスク完了結果:`,
-								},
-								...toolResults,
-							]
+						if (!result) {
+							state.consecutiveMistakeCount++
+							pushToolResult(await sayAndCreateMissingParamError("attempt_completion", "result"))
+							await saveCheckpoint()
 							break
 						}
+						state.consecutiveMistakeCount = 0
+
+						let commandResult: ToolResponse | undefined
+						if (command) {
+							if (lastMessage && lastMessage.ask !== "command") {
+								await say(Say.COMPLETION_RESULT, result, undefined)
+								await saveCheckpoint()
+								await addNewChangesFlagToLastCompletionResultMessage()
+							} else {
+								await saveCheckpoint()
+							}
+
+							await askApproval(Ask.COMMAND, command)
+							const [execCommandResult] = await executeCommandTool(command!)
+							commandResult = execCommandResult
+						} else {
+							await say(Say.COMPLETION_RESULT, result, undefined)
+							await saveCheckpoint()
+							await addNewChangesFlagToLastCompletionResultMessage()
+						}
+
+						const { response, text, images } = await ask(Ask.COMPLETION_RESULT, "")
+						if (response === "yesButtonClicked") {
+							console.log("再帰ループ停止のシグナルを送信します。")
+							state.taskCompleted = true // Add this line
+							pushToolResult("") // 再帰ループ停止のシグナル
+							break
+						}
+						await say(Say.USER_FEEDBACK, text ?? "", images)
+
+						const toolResults: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam)[] = []
+						if (commandResult) {
+							if (typeof commandResult === "string") {
+								toolResults.push({
+									type: "text",
+									text: commandResult,
+								})
+							} else if (Array.isArray(commandResult)) {
+								toolResults.push(...commandResult)
+							}
+						}
+						toolResults.push({
+							type: "text",
+							text: `ユーザーからフィードバックが提供されました。フィードバックを参考にタスクを継続し、再度完了を試みてください。\n<feedback>\n${text}\n</feedback>`,
+						})
+						toolResults.push(...formatResponse.imageBlocks(images))
+						const message = state.userMessageContent
+						state.userMessageContent = [
+							...message,
+							{
+								type: "text",
+								text: `タスク完了結果:`,
+							},
+							...toolResults,
+						]
+						break
 					} catch (error) {
 						await handleError("完了試行", error)
 						break
@@ -716,22 +626,5 @@ export const presentAssistantMessage = async () => {
 			break
 		}
 	}
-
-	// インデックスが範囲外の場合は、ストリーミングが完了しているかチェック
-	state.presentAssistantMessageLocked = false // ロック解除
-	if (!block.partial || state.didAlreadyUseTool) {
-		if (state.currentStreamingContentIndex === state.assistantMessageContent.length - 1) {
-			state.userMessageContentReady = true
-		}
-		// 次のブロックが存在する場合は再帰的に処理を呼び出す
-		state.currentStreamingContentIndex++
-		if (state.currentStreamingContentIndex < state.assistantMessageContent.length) {
-			await presentAssistantMessage()
-			return
-		}
-	}
-	// 部分的なブロックであっても、更新が保留されていれば再呼び出し
-	if (state.presentAssistantMessageHasPendingUpdates) {
-		await presentAssistantMessage()
-	}
+}
 }
