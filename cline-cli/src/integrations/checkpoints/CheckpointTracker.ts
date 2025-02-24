@@ -41,7 +41,7 @@ class CheckpointTracker {
 
 	private static async getWorkingDirectory(): Promise<string> {
 		const state = globalStateManager.state
-		const cwd =state.workspaceFolder
+		const cwd = state.workspaceFolder
 		if (!cwd) {
 			throw new Error("No workspace detected. Please open Cline in a workspace to use checkpoints.")
 		}
@@ -299,8 +299,8 @@ class CheckpointTracker {
 			let beforeContent = ""
 			try {
 				beforeContent = await git.show([`${baseHash}:${filePath}`])
-			} catch (error) {				
-				console.error(`File not found in commit ${baseHash} for file ${filePath}:`, error);
+			} catch (error) {
+				console.error(`File not found in commit ${baseHash} for file ${filePath}:`, error)
 			}
 
 			let afterContent = ""
@@ -309,14 +309,14 @@ class CheckpointTracker {
 				try {
 					afterContent = await git.show([`${rhsHash}:${filePath}`])
 				} catch (error) {
-					console.error(`File not found in commit ${rhsHash} for file ${filePath}:`, error);
+					console.error(`File not found in commit ${rhsHash} for file ${filePath}:`, error)
 				}
 			} else {
 				// otherwise, read from disk (includes uncommitted changes)
 				try {
 					afterContent = await fs.readFile(absolutePath, "utf8")
 				} catch (error) {
-					console.error(`Failed to read after content for ${absolutePath}:`, error);
+					console.error(`Failed to read after content for ${absolutePath}:`, error)
 				}
 			}
 

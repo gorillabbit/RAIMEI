@@ -10,11 +10,7 @@
  * @param startIndex オリジナルコンテンツ内で検索を開始する文字位置
  * @returns [開始文字位置, 終了文字位置] のタプル、または false
  */
-function lineTrimmedFallbackMatch(
-	originalContent: string,
-	searchContent: string,
-	startIndex: number
-): [number, number] | false {
+function lineTrimmedFallbackMatch(originalContent: string, searchContent: string, startIndex: number): [number, number] | false {
 	// オリジナルと検索コンテンツを行ごとに分割
 	const originalLines = originalContent.split("\n")
 	const searchLines = searchContent.split("\n")
@@ -77,11 +73,7 @@ function lineTrimmedFallbackMatch(
  * @param startIndex オリジナルコンテンツ内で検索を開始する文字位置
  * @returns [開始位置, 終了位置] のタプル、または false
  */
-function blockAnchorFallbackMatch(
-	originalContent: string,
-	searchContent: string,
-	startIndex: number
-): [number, number] | false {
+function blockAnchorFallbackMatch(originalContent: string, searchContent: string, startIndex: number): [number, number] | false {
 	const originalLines = originalContent.split("\n")
 	const searchLines = searchContent.split("\n")
 
@@ -139,7 +131,7 @@ function blockAnchorFallbackMatch(
  * オリジナルのファイル内容に変更を適用し、新しいファイル内容を構築します。
  *
  * この diff 形式は以下の 3 つのマーカーを使用します:
- * 
+ *
  *   <<<<<<< SEARCH
  *   [オリジナルから検索する内容]
  *   =======
@@ -185,11 +177,7 @@ function blockAnchorFallbackMatch(
  * @param isFinal 最終チャンクかどうかのフラグ
  * @returns 構築された新しいファイル内容
  */
-export async function constructNewFileContent(
-	diffContent: string,
-	originalContent: string,
-	isFinal: boolean
-): Promise<string> {
+export async function constructNewFileContent(diffContent: string, originalContent: string, isFinal: boolean): Promise<string> {
 	let result = ""
 	let lastProcessedIndex = 0
 
@@ -247,15 +235,15 @@ export async function constructNewFileContent(
 					// 行トリム一致の試行
 					const lineMatch = lineTrimmedFallbackMatch(originalContent, currentSearchContent, lastProcessedIndex)
 					if (lineMatch) {
-						[searchMatchIndex, searchEndIndex] = lineMatch
+						;[searchMatchIndex, searchEndIndex] = lineMatch
 					} else {
 						// ブロックアンカー一致の試行
 						const blockMatch = blockAnchorFallbackMatch(originalContent, currentSearchContent, lastProcessedIndex)
 						if (blockMatch) {
-							[searchMatchIndex, searchEndIndex] = blockMatch
+							;[searchMatchIndex, searchEndIndex] = blockMatch
 						} else {
 							throw new Error(
-								`SEARCH ブロック:\n${currentSearchContent.trimEnd()}\n...がファイル内のどこにもマッチしませんでした。`
+								`SEARCH ブロック:\n${currentSearchContent.trimEnd()}\n...がファイル内のどこにもマッチしませんでした。`,
 							)
 						}
 					}

@@ -40,15 +40,15 @@ export type ClineSay =
 	| "diff_error"
 	| "deleted_api_reqs"
 export interface ClineMessage {
-    ts: number
-    type: "ask" | "say"
-    ask?: ClineAsk
-    say?: ClineSay
-    text?: string
-    images?: string
-    partial?: boolean
-    lastCheckpointHash?: string
-    conversationHistoryIndex?: number
+	ts: number
+	type: "ask" | "say"
+	ask?: ClineAsk
+	say?: ClineSay
+	text?: string
+	images?: string
+	partial?: boolean
+	lastCheckpointHash?: string
+	conversationHistoryIndex?: number
 	conversationHistoryDeletedRangeStart?: number
 	conversationHistoryDeletedRangeEnd?: number
 }
@@ -75,7 +75,7 @@ export type ToolUseName = (typeof toolUseNames)[number]
 
 export type ToolResponse = string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam>
 export type UserContent = Array<
-    Anthropic.TextBlockParam | Anthropic.ImageBlockParam | Anthropic.ToolUseBlockParam | Anthropic.ToolResultBlockParam
+	Anthropic.TextBlockParam | Anthropic.ImageBlockParam | Anthropic.ToolUseBlockParam | Anthropic.ToolResultBlockParam
 >
 
 export interface ClineApiReqInfo {

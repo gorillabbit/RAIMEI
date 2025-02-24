@@ -6,186 +6,171 @@ import {
 	toolParamNames,
 	toolUseNames,
 	ToolUseName,
-  } from "./index.js";
-  
-  /**
-   * アシスタントからのメッセージ文字列を解析し、テキストコンテンツやツール利用指示などのブロックに分割します。
-   * ツール利用指示（<toolname>...</toolname>）と、そのパラメータ（<param>...</param>）を検出し、
-   * テキスト部分は「text」ブロック、ツール利用は「tool_use」ブロックとして保持します。
-   *
-   * @param assistantMessage - アシスタントからのメッセージ文字列
-   * @returns 分割後のコンテンツブロック配列
-   */
-  export const parseAssistantMessage = (assistantMessage: string): AssistantMessageContent[] => {
-	console.log("assistantMessage: ", assistantMessage);
+} from "./index.js"
+
+/**
+ * アシスタントからのメッセージ文字列を解析し、テキストコンテンツやツール利用指示などのブロックに分割します。
+ * ツール利用指示（<toolname>...</toolname>）と、そのパラメータ（<param>...</param>）を検出し、
+ * テキスト部分は「text」ブロック、ツール利用は「tool_use」ブロックとして保持します。
+ *
+ * @param assistantMessage - アシスタントからのメッセージ文字列
+ * @returns 分割後のコンテンツブロック配列
+ */
+export const parseAssistantMessage = (assistantMessage: string): AssistantMessageContent[] => {
+	console.log("assistantMessage: ", assistantMessage)
 	// 解析結果を格納する配列
-	const contentBlocks: AssistantMessageContent[] = [];
-  
+	const contentBlocks: AssistantMessageContent[] = []
+
 	// 現在処理中のテキストコンテンツ
-	let currentTextContent: TextContent | undefined = undefined;
+	let currentTextContent: TextContent | undefined = undefined
 	// テキストコンテンツの開始インデックス
-	let currentTextContentStartIndex = 0;
-  
+	let currentTextContentStartIndex = 0
+
 	// 現在処理中のツール利用情報
-	let currentToolUse: ToolUse | undefined = undefined;
+	let currentToolUse: ToolUse | undefined = undefined
 	// ツール利用ブロックの開始インデックス
-	let currentToolUseStartIndex = 0;
-  
+	let currentToolUseStartIndex = 0
+
 	// 現在処理中のパラメータ名
-	let currentParamName: ToolParamName | undefined = undefined;
+	let currentParamName: ToolParamName | undefined = undefined
 	// パラメータ値の開始インデックス
-	let currentParamValueStartIndex = 0;
-  
+	let currentParamValueStartIndex = 0
+
 	// 解析対象文字列を蓄積するバッファ
-	let accumulator = "";
+	let accumulator = ""
 
 	for (let i = 0; i < assistantMessage.length; i++) {
-		const char = assistantMessage[i];
-		accumulator += char;
-	
+		const char = assistantMessage[i]
+		accumulator += char
+
 		// ----------------------------------------
 		// ■ ツール利用中 かつ パラメータ名が存在する場合の処理
 		// ----------------------------------------
 		if (currentToolUse && currentParamName) {
-			const currentParamValue = accumulator.slice(currentParamValueStartIndex);
-			const paramClosingTag = `</${currentParamName}>`;
-	
+			const currentParamValue = accumulator.slice(currentParamValueStartIndex)
+			const paramClosingTag = `</${currentParamName}>`
+
 			// パラメータ終了タグが見つかったかどうかをチェック
 			if (currentParamValue.endsWith(paramClosingTag)) {
-			// パラメータ値の終了
-			currentToolUse.params[currentParamName] = currentParamValue
-				.slice(0, -paramClosingTag.length)
-				.trim();
-			currentParamName = undefined;
-			continue;
+				// パラメータ値の終了
+				currentToolUse.params[currentParamName] = currentParamValue.slice(0, -paramClosingTag.length).trim()
+				currentParamName = undefined
+				continue
 			} else {
-			// パラメータ値の途中を蓄積中
-			continue;
+				// パラメータ値の途中を蓄積中
+				continue
 			}
 		}
-	
+
 		// ----------------------------------------
 		// ■ ツール利用中 かつ パラメータ名が未設定の場合の処理
 		// ----------------------------------------
 		if (currentToolUse) {
 			// ツール利用の文字列を抽出
-			const currentToolValue = accumulator.slice(currentToolUseStartIndex);
-			const toolUseClosingTag = `</${currentToolUse.name}>`;
-	
+			const currentToolValue = accumulator.slice(currentToolUseStartIndex)
+			const toolUseClosingTag = `</${currentToolUse.name}>`
+
 			// ツール利用終了タグの検出
 			if (currentToolValue.endsWith(toolUseClosingTag)) {
-			// ツール利用の終了
-			currentToolUse.partial = false;
-			contentBlocks.push(currentToolUse);
-			currentToolUse = undefined;
-			continue;
+				// ツール利用の終了
+				currentToolUse.partial = false
+				contentBlocks.push(currentToolUse)
+				currentToolUse = undefined
+				continue
 			} else {
-			// パラメータ開始タグを探す
-			const possibleParamOpeningTags = toolParamNames.map((name) => `<${name}>`);
-			for (const paramOpeningTag of possibleParamOpeningTags) {
-				if (accumulator.endsWith(paramOpeningTag)) {
-				// パラメータ開始を検出
-				currentParamName = paramOpeningTag.slice(1, -1) as ToolParamName;
-				currentParamValueStartIndex = accumulator.length;
-				break;
+				// パラメータ開始タグを探す
+				const possibleParamOpeningTags = toolParamNames.map((name) => `<${name}>`)
+				for (const paramOpeningTag of possibleParamOpeningTags) {
+					if (accumulator.endsWith(paramOpeningTag)) {
+						// パラメータ開始を検出
+						currentParamName = paramOpeningTag.slice(1, -1) as ToolParamName
+						currentParamValueStartIndex = accumulator.length
+						break
+					}
 				}
-			}
-	
-			// write_to_file の特別ケース対応:
-			//   ファイル内容に閉じタグが含まれる場合があるため、
-			//   パラメータ<content>の最初から最後の出現位置までを取り出す。
-			const contentParamName: ToolParamName = "content";
-			if (
-				currentToolUse.name === "write_to_file" &&
-				accumulator.endsWith(`</${contentParamName}>`)
-			) {
-				const toolContent = accumulator.slice(currentToolUseStartIndex);
-				const contentStartTag = `<${contentParamName}>`;
-				const contentEndTag = `</${contentParamName}>`;
-				const contentStartIndex =
-				toolContent.indexOf(contentStartTag) + contentStartTag.length;
-				const contentEndIndex = toolContent.lastIndexOf(contentEndTag);
-	
-				if (
-				contentStartIndex !== -1 &&
-				contentEndIndex !== -1 &&
-				contentEndIndex > contentStartIndex
-				) {
-				currentToolUse.params[contentParamName] = toolContent
-					.slice(contentStartIndex, contentEndIndex)
-					.trim();
+
+				// write_to_file の特別ケース対応:
+				//   ファイル内容に閉じタグが含まれる場合があるため、
+				//   パラメータ<content>の最初から最後の出現位置までを取り出す。
+				const contentParamName: ToolParamName = "content"
+				if (currentToolUse.name === "write_to_file" && accumulator.endsWith(`</${contentParamName}>`)) {
+					const toolContent = accumulator.slice(currentToolUseStartIndex)
+					const contentStartTag = `<${contentParamName}>`
+					const contentEndTag = `</${contentParamName}>`
+					const contentStartIndex = toolContent.indexOf(contentStartTag) + contentStartTag.length
+					const contentEndIndex = toolContent.lastIndexOf(contentEndTag)
+
+					if (contentStartIndex !== -1 && contentEndIndex !== -1 && contentEndIndex > contentStartIndex) {
+						currentToolUse.params[contentParamName] = toolContent.slice(contentStartIndex, contentEndIndex).trim()
+					}
 				}
-			}
-	
-			// ツール利用ブロックの途中とみなし続行
-			continue;
+
+				// ツール利用ブロックの途中とみなし続行
+				continue
 			}
 		}
-	
+
 		// ----------------------------------------
 		// ■ ツール利用を開始していない状態
 		// ----------------------------------------
-		let didStartToolUse = false;
-		const possibleToolUseOpeningTags = toolUseNames.map((name) => `<${name}>`);
-	
+		let didStartToolUse = false
+		const possibleToolUseOpeningTags = toolUseNames.map((name) => `<${name}>`)
+
 		for (const toolUseOpeningTag of possibleToolUseOpeningTags) {
 			if (accumulator.endsWith(toolUseOpeningTag)) {
-			// 新しいツール利用ブロックの開始
-			currentToolUse = {
-				type: "tool_use",
-				name: toolUseOpeningTag.slice(1, -1) as ToolUseName,
-				params: {},
-				partial: true,
-			};
-			currentToolUseStartIndex = accumulator.length;
-	
-			// 直前までテキストコンテンツがあれば確定してブロックに追加
-			if (currentTextContent) {
-				currentTextContent.partial = false;
-				// テキスト末尾からツールタグ分のテキストを削除して整形
-				currentTextContent.content = currentTextContent.content
-				.slice(0, -toolUseOpeningTag.slice(0, -1).length)
-				.trim();
-				contentBlocks.push(currentTextContent);
-				currentTextContent = undefined;
-			}
-			didStartToolUse = true;
-			break;
+				// 新しいツール利用ブロックの開始
+				currentToolUse = {
+					type: "tool_use",
+					name: toolUseOpeningTag.slice(1, -1) as ToolUseName,
+					params: {},
+					partial: true,
+				}
+				currentToolUseStartIndex = accumulator.length
+
+				// 直前までテキストコンテンツがあれば確定してブロックに追加
+				if (currentTextContent) {
+					currentTextContent.partial = false
+					// テキスト末尾からツールタグ分のテキストを削除して整形
+					currentTextContent.content = currentTextContent.content
+						.slice(0, -toolUseOpeningTag.slice(0, -1).length)
+						.trim()
+					contentBlocks.push(currentTextContent)
+					currentTextContent = undefined
+				}
+				didStartToolUse = true
+				break
 			}
 		}
-	
+
 		// ツール利用開始タグが検出されなかった場合はテキストとして扱う
 		if (!didStartToolUse) {
 			if (currentTextContent === undefined) {
-			// 新しいテキストブロックの開始
-			currentTextContentStartIndex = i;
+				// 新しいテキストブロックの開始
+				currentTextContentStartIndex = i
 			}
 			currentTextContent = {
-			type: "text",
-			content: accumulator.slice(currentTextContentStartIndex).trim(),
-			partial: true,
-			};
+				type: "text",
+				content: accumulator.slice(currentTextContentStartIndex).trim(),
+				partial: true,
+			}
 		}
-		}
-	
-		// ----------------------------------------
-		// ■ ループ終了後の後処理
-		// ----------------------------------------
-		// ツール利用が未完のまま終了した場合、partialとして追加
-		if (currentToolUse) {
+	}
+
+	// ----------------------------------------
+	// ■ ループ終了後の後処理
+	// ----------------------------------------
+	// ツール利用が未完のまま終了した場合、partialとして追加
+	if (currentToolUse) {
 		// 未完のパラメータがあれば格納
 		if (currentParamName) {
-			currentToolUse.params[currentParamName] = accumulator
-			.slice(currentParamValueStartIndex)
-			.trim();
+			currentToolUse.params[currentParamName] = accumulator.slice(currentParamValueStartIndex).trim()
 		}
-		contentBlocks.push(currentToolUse);
-		}
-	
-		// 未完のテキストブロックがあれば追加
-		if (currentTextContent) {
-		contentBlocks.push(currentTextContent);
-		}
-		return contentBlocks;
-	};
-	
+		contentBlocks.push(currentToolUse)
+	}
+
+	// 未完のテキストブロックがあれば追加
+	if (currentTextContent) {
+		contentBlocks.push(currentTextContent)
+	}
+	return contentBlocks
+}
