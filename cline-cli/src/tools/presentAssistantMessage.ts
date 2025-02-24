@@ -4,7 +4,6 @@ import { serializeError } from "serialize-error"
 import cloneDeep from "clone-deep"
 import { ToolParamName } from "../assistant-message/index.js"
 import { ask } from "../chat.js"
-import { saveCheckpoint } from "../checkpoint.js"
 import { globalStateManager } from "../globalState.js"
 import { extractTextFromFile } from "../integrations/misc/extract-text.js"
 import { formatResponse } from "../prompts/responses.js"
@@ -63,7 +62,6 @@ export const presentAssistantMessage = async () => {
 	}
 
 	// ストリーミング中に配列が更新される可能性があるため、ディープコピーを作成
-	console.log("state.assistantMessageContent", state.assistantMessageContent)
 	const block = cloneDeep(state.assistantMessageContent[state.currentStreamingContentIndex])
 	console.log("block", block)
 	for (const block of state.assistantMessageContent) {
@@ -203,12 +201,10 @@ export const presentAssistantMessage = async () => {
 						const content: string | undefined = block.params.content
 						if (!content) {
 							pushToolResult(await sayAndCreateMissingParamError("edit_issue", "content"))
-							await saveCheckpoint()
 							break
 						}
 						if (!issueNumber) {
 							pushToolResult(await sayAndCreateMissingParamError("edit_issue", "issue_number"))
-							await saveCheckpoint()
 							break
 						}
 						state.consecutiveMistakeCount = 0
@@ -217,7 +213,6 @@ export const presentAssistantMessage = async () => {
 						} catch {
 							state.consecutiveMistakeCount++
 							pushToolResult(await sayAndCreateMissingParamError("edit_issue", "issue_number"))
-							await saveCheckpoint()
 							break
 						}
 						await say(Say.TOOL, `Issue ${issueNumber} を編集します。`, undefined)
@@ -294,19 +289,16 @@ export const presentAssistantMessage = async () => {
 							if (!relPath) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError(block.name, "path"))
-								await saveCheckpoint()
 								break
 							}
 							if (block.name === "replace_in_file" && !diff) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("replace_in_file", "diff"))
-								await saveCheckpoint()
 								break
 							}
 							if (block.name === "write_to_file" && !content) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("write_to_file", "content"))
-								await saveCheckpoint()
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -375,7 +367,7 @@ export const presentAssistantMessage = async () => {
 							if (!relDirPath) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("list_files", "path"))
-								await saveCheckpoint()
+								
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -442,7 +434,6 @@ export const presentAssistantMessage = async () => {
 							if (!regex) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("search_files", "regex"))
-								await saveCheckpoint()
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -467,7 +458,7 @@ export const presentAssistantMessage = async () => {
 							if (!command) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("execute_command", "command"))
-								await saveCheckpoint()
+								
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -489,7 +480,7 @@ export const presentAssistantMessage = async () => {
 							if (!question) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("ask_followup_question", "question"))
-								await saveCheckpoint()
+								
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -497,11 +488,11 @@ export const presentAssistantMessage = async () => {
 							const { text, images } = await ask(Ask.FOLLOWUP, question)
 							await say(Say.USER_FEEDBACK, text ?? "", images)
 							pushToolResult(formatResponse.toolResult(`<answer>\n${text}\n</answer>`, images))
-							await saveCheckpoint()
+							
 							break
 						} catch (error) {
 							await handleError("質問送信", error)
-							await saveCheckpoint()
+							
 							break
 						}
 					}
@@ -561,7 +552,7 @@ export const presentAssistantMessage = async () => {
 							if (!result) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("attempt_completion", "result"))
-								await saveCheckpoint()
+								
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -570,10 +561,7 @@ export const presentAssistantMessage = async () => {
 							if (command) {
 								if (lastMessage && lastMessage.ask !== "command") {
 									await say(Say.COMPLETION_RESULT, result, undefined)
-									await saveCheckpoint()
 									await addNewChangesFlagToLastCompletionResultMessage()
-								} else {
-									await saveCheckpoint()
 								}
 
 								await askApproval(Ask.COMMAND, command)
@@ -581,7 +569,6 @@ export const presentAssistantMessage = async () => {
 								commandResult = execCommandResult
 							} else {
 								await say(Say.COMPLETION_RESULT, result, undefined)
-								await saveCheckpoint()
 								await addNewChangesFlagToLastCompletionResultMessage()
 							}
 
