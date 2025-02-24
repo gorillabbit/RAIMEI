@@ -198,7 +198,6 @@ async function processApiStream(): Promise<{
 	} finally {
 		state.didCompleteReadingStream = true
 	}
-	await finalizePartialBlocks()
 	return { assistantMessage, tokenUsage }
 }
 
@@ -276,14 +275,4 @@ function updateUserContentNoTool(): void {
 	const currentUserMsg = state.userMessageContent
 	state.userMessageContent = [...currentUserMsg, { type: "text", text: formatResponse.noToolsUsed() }]
 	state.consecutiveMistakeCount++
-}
-
-/**
- * partial フラグが付いたブロックをすべて完了状態にし、表示を更新する
- */
-async function finalizePartialBlocks(): Promise<void> {
-	const state = globalStateManager.state
-	const updated = state.assistantMessageContent.map((block) => ({ ...block, partial: false }))
-	state.assistantMessageContent = updated
-	await presentAssistantMessage()
 }

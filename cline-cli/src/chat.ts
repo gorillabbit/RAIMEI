@@ -3,7 +3,6 @@ import { globalStateManager } from "./globalState.js"
 import { addToClineMessages } from "./tasks.js"
 import { Ask, MessageType } from "./database.js"
 
-
 /**
  * askResponse 関連の状態をクリアする
  */
