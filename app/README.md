@@ -50,6 +50,7 @@ npm run build
 
 ```bash
 npm start
+sudo tailscale funnel 8000
 ```
 
 これにより、Webhook を受け付けるサーバーが起動します。GitHub からのイベントを受信すると、RAIMEI が自動的に適切なアクションを実行します。
