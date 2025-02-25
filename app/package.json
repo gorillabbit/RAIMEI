@@ -1,4 +1,7 @@
 {
+	"name": "raimei-label-manager",
+	"version": "1.0.0",
+	"description": "GitHub Issueのラベル管理ツール",
 	"devDependencies": {
 		"@types/node": "^22.13.4",
 		"crypto": "^1.0.1",
@@ -8,9 +11,19 @@
 		"typescript": "^5.7.3"
 	},
 	"scripts": {
-		"build": "tsc"
+		"build": "ts-node src/build.ts",
+		"start": "node dist/index.js",
+		"dev": "ts-node src/index.ts",
+		"cli": "ts-node src/cli.ts",
+		"test": "ts-node src/test.ts"
 	},
 	"dependencies": {
-		"@octokit/rest": "^21.1.1"
+		"@octokit/rest": "^21.1.1",
+		"@types/js-yaml": "^4.0.9",
+		"axios": "^1.7.9",
+		"js-yaml": "^4.1.0"
+	},
+	"bin": {
+		"label-cli": "./dist/cli.js"
 	}
 }
