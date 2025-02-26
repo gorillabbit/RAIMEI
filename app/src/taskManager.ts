@@ -4,6 +4,8 @@ import { once } from 'events';
 import * as dotenv from 'dotenv';
 import { LabelManager } from './labelManager';
 import { getIssueContent } from './githubApi';
+import fs from 'fs';
+import os from 'os';
 
 // 環境変数を読み込む
 dotenv.config();
@@ -144,16 +146,26 @@ export class TaskManager {
   private async executeClineCommand(prompt: string, model: string = 'gemini'): Promise<boolean> {
     try {
       console.log(`cline-cliを実行します: ${prompt}`);
+
+      // Create a temporary directory
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cline-'));
+      const promptFilePath = path.join(tmpDir, 'prompt.txt');
+
+      // Write the prompt to the temporary file
+      fs.writeFileSync(promptFilePath, prompt);
       
       const command = "node";
       const args = [
         this.clineCliPath,
         this.workspacePath,
-        `"${prompt}"`,
+        "-f", // Use the -f option
+        promptFilePath, // Pass the path to the prompt file
         model,
       ];
       
       const childProcess = spawn(command, args, { shell: true });
+      // TODO: Delete the temporary directory after the process finishes.  This is
+      // tricky to do reliably, especially if the process is killed.
       
       childProcess.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);

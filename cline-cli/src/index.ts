@@ -6,6 +6,8 @@ import { startTask } from "./lifecycle.js"
 import { initDB } from "./database.js"
 import { getConfig, setConfig } from "./utils/fs.js"
 import * as readline from "readline"
+import yargs from 'yargs';
+import fs from 'fs';
 
 const requireApiKey = async (config: ClineConfig, keyName: keyof ClineConfig) => {
 	if (!config[keyName]) {
@@ -31,12 +33,31 @@ async function main() {
 	// AIによる処理をCLIから実行
 	const taskId = randomUUID()
 	await ensureTaskDirectoryExists(taskId)
+
+	const argv = await yargs(process.argv.slice(2))
+		.option('file', {
+			alias: 'f',
+			describe: 'Path to the prompt file',
+			type: 'string',
+		})
+		.argv;
+
 	// コマンドの引数から、指示と対象リポジトリパスを取得
-	const workspaceFolder = process.argv[2]
-	const instruction = process.argv[3]
+	const workspaceFolder = argv._[0] as string;
+    let instruction = argv._[1] as string;
 	globalStateManager.state.workspaceFolder = workspaceFolder
-	if (process.argv.length > 4) {
-		const apiProvider = process.argv[4]
+
+	if (argv.file) {
+		try {
+			instruction = fs.readFileSync(argv.file, 'utf-8');
+		} catch (error) {
+			console.error("Error reading prompt file:", error);
+			process.exit(1);
+		}
+	}
+
+	if (argv._.length > 2) {
+		const apiProvider = argv._[2]
 		await setConfig({ apiProvider: apiProvider as ApiProvider })
 	}
 
