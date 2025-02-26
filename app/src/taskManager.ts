@@ -108,6 +108,9 @@ export class TaskManager {
       return false;
     } catch (error) {
       console.error('イシュー処理中にエラーが発生しました:', error);
+      if (error instanceof Error) {
+        console.error(error.stack);
+      }
       return false;
     }
   }
@@ -171,6 +174,9 @@ export class TaskManager {
       return code[0] === 0;
     } catch (error) {
       console.error('cline-cliの実行中にエラーが発生しました:', error);
+      if (error instanceof Error) {
+        console.error(error.stack);
+      }
       return false;
     }
   }

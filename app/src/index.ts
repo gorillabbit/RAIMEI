@@ -204,6 +204,9 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
         }
       } catch (error) {
         console.error("Error processing webhook event:", error);
+        if (error instanceof Error) {
+          console.error(error.stack);
+        }
         reply.status(500).send({status: "error", message: "Failed to process webhook event"});
         return;
       }

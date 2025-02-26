@@ -11,10 +11,9 @@
 		"typescript": "^5.7.3"
 	},
 	"scripts": {
-		"build": "ts-node src/build.ts",
+		"build": "tsc",
 		"start": "node dist/index.js",
 		"dev": "ts-node src/index.ts",
-		"cli": "ts-node src/cli.ts",
 		"test": "ts-node src/test.ts"
 	},
 	"dependencies": {
