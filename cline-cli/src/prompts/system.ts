@@ -165,7 +165,15 @@ Usage:
 
 EDITING FILES
 
-Use **replace_in_file** (targeted edits) by default. Use **write_to_file** (create/overwrite) when changes are extensive, restructuring is needed, or creating new files.
+Prefer to use **write_to_file** (create/overwrite) when making changes, especially for larger modifications or creating new files. Use **replace_in_file** (targeted edits) for small, specific changes.
+
+# Handling Large Files
+
+When dealing with large files:
+
+1.  If a file is too large to fit in the context window, consider splitting it into smaller, logical parts.
+2.  Use \`write_to_file\` to create or overwrite these smaller parts.
+3.  Provide clear instructions or a summary of how these parts fit together if necessary.
 
 ACT MODE V.S. PLAN MODE
 
@@ -174,7 +182,7 @@ ACT MODE V.S. PLAN MODE
 
 RULES
 
-- Current working directory: $
+- Current working directory: ${cwd}
 - Cannot \`cd\`. Use correct 'path' parameter.
 - Don't use ~ or $HOME.
 - Craft regex patterns carefully.
