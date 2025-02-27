@@ -119,16 +119,6 @@ export class TaskManager {
   }
 
   /**
-   * リポジトリ情報を抽出
-   * @param issueUrl イシューのURL
-   * @returns リポジトリ情報
-   */
-  private extractRepoInfo(issueUrl: string): { owner: string, repo: string } | null {
-    const match = issueUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-    return match ? { owner: match[1], repo: match[2] } : null;
-  }
-
-  /**
    * cline-cliを使用してコマンドを実行
    * @param prompt プロンプト
    * @param model モデル名
@@ -191,7 +181,7 @@ export class TaskManager {
    * @returns 成功したかどうか
    */
   private async writeIssueDescription(issueNumber: string, issueContent: string): Promise<boolean> {
-    const prompt = `このイシューを読んで、リポジトリの中身も考えて実装計画を立ててイシューに記載してください。issue_number:${issueNumber} タイトル:${issueContent.split('\n')[0] || 'No Title'} 内容:${issueContent}`;
+    const prompt = `このイシューを読んで、リポジトリの中身も考えて実装計画を立ててイシューに記載してください。もし中身がない場合は、イシューのタイトルからイシューの内容を記載してください。issue_number:${issueNumber} タイトル:${issueContent.split('\n')[0] || 'No Title'} 内容:${issueContent}`;
     return await this.executeClineCommand(prompt);
   }
 
