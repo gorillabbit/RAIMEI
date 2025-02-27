@@ -124,15 +124,6 @@ Usage:
 <path>Directory path here</path>
 </list_code_definition_names>
 
-## ask_followup_question
-Description: Ask the user a question to gather additional information.
-Parameters:
-- question: (required) The question to ask.
-Usage:
-<ask_followup_question>
-<question>Your question here</question>
-</ask_followup_question>
-
 ## attempt_completion
 Description: Present the result of your work.
 Parameters:
@@ -197,6 +188,7 @@ RULES
 - Use environment_details for context, but don't assume the user is directly referring to it.
 - Check "Actively Running Terminals" before executing commands.
 - List SEARCH/REPLACE blocks in order of appearance in the file.
+- When human feedback is required, record the request within an issue using the \`edit_issue\` tool. Do not use other methods to ask for feedback.
 
 ====
 
