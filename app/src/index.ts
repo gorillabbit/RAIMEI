@@ -121,7 +121,7 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
             await addLabelToIssue(issue.html_url, ['RAIMEI イシュー記載中']);
             
             // タスクマネージャーでイシューを処理
-            await taskManager.processIssueByLabel(issue.html_url);
+            await taskManager.processIssueByLabel(issue.title, issue.html_url);
             
           } else if (action === 'assigned') {
             // イシューが割り当てられたとき
@@ -132,7 +132,7 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
             console.log(`Issue labeled: title=${issue.title}, url=${issue.html_url}`);
             
             // ラベルが変更されたときにタスクマネージャーでイシューを処理
-            await taskManager.processIssueByLabel(issue.html_url);
+            await taskManager.processIssueByLabel(issue.title, issue.html_url);
           } else {
             console.log(`Issue event received: action=${action}, title=${issue?.title}`);
           }
@@ -162,7 +162,7 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
                     console.log(`Updated issue #${issueNumber} label to 'RAIMEI PRレビュー待ち'`);
                     
                     // タスクマネージャーでイシューを処理
-                    await taskManager.processIssueByLabel(issueUrl);
+                    await taskManager.processIssueByLabel(pull_request.title, issueUrl);
                   } catch (error) {
                     console.error(`Failed to update issue #${issueNumber} label:`, error);
                   }

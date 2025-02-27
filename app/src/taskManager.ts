@@ -49,7 +49,7 @@ export class TaskManager {
    * @param issueUrl イシューのURL
    * @returns 成功したかどうか
    */
-  async processIssueByLabel(issueUrl: string): Promise<boolean> {
+  async processIssueByLabel(title: string, issueUrl: string): Promise<boolean> {
     try {
       // 現在のラベルを取得
       const currentLabels = await this.labelManager.getCurrentLabels(issueUrl);
@@ -69,25 +69,25 @@ export class TaskManager {
         switch (label) {
           case 'RAIMEI イシュー記載中':
             // イシュー記載が完了したら、レビュー待ちラベルに変更
-            await this.writeIssueDescription(issueNumber, issueContent);
+            await this.writeIssueDescription(issueNumber, title, issueContent);
             await this.labelManager.updateIssueLabel(issueUrl, 'RAIMEI イシューレビュー待ち');
             return true;
             
           case 'RAIMEI イシューレビュー待ち':
             // イシューレビューが完了したら、実装中ラベルに変更
-            await this.reviewIssueDescription(issueNumber, issueContent);
+            await this.reviewIssueDescription(issueNumber, title, issueContent);
             await this.labelManager.updateIssueLabel(issueUrl, 'RAIMEI 実装中');
             return true;
             
           case 'RAIMEI 実装中':
             // 実装が完了したら、PRレビュー待ちラベルに変更
-            await this.implementFeature(issueNumber, issueContent);
+            await this.implementFeature(issueNumber, title, issueContent);
             // 実装が完了すると、PRが作成され、Webhookによって自動的にラベルが更新される
             return true;
             
           case 'RAIMEI PRレビュー待ち':
             // PRレビューが完了したら、人間PRレビュー待ちラベルに変更
-            await this.reviewPullRequest(issueNumber, issueContent);
+            await this.reviewPullRequest(issueNumber, title, issueContent);
             await this.labelManager.updateIssueLabel(issueUrl, '人間 PRレビュー待ち');
             return true;
             
@@ -180,41 +180,44 @@ export class TaskManager {
    * @param issueContent イシューの内容
    * @returns 成功したかどうか
    */
-  private async writeIssueDescription(issueNumber: string, issueContent: string): Promise<boolean> {
-    const prompt = `このイシューを読んで、リポジトリの中身も考えて実装計画を立ててイシューに記載してください。もし中身がない場合は、イシューのタイトルからイシューの内容を記載してください。issue_number:${issueNumber} タイトル:${issueContent.split('\n')[0] || 'No Title'} 内容:${issueContent}`;
+  private async writeIssueDescription(issueNumber: string, issueTitle: string, issueContent: string): Promise<boolean> {
+    const prompt = `このイシューを読んで、リポジトリの中身も考えて実装計画を立ててイシューに記載してください。もし中身がない場合は、イシューのタイトルからイシューの内容を記載してください。issue_number:${issueNumber} タイトル:${issueTitle} 内容:${issueContent}`;
     return await this.executeClineCommand(prompt);
   }
 
   /**
    * イシューの説明をレビュー
    * @param issueNumber イシュー番号
+   * @param issueTitle イシューのタイトル
    * @param issueContent イシューの内容
    * @returns 成功したかどうか
    */
-  private async reviewIssueDescription(issueNumber: string, issueContent: string): Promise<boolean> {
-    const prompt = `このイシューの実装計画をレビューして、必要に応じて修正してください。issue_number:${issueNumber} 内容:${issueContent}`;
+  private async reviewIssueDescription(issueNumber: string, issueTitle: string, issueContent: string): Promise<boolean> {
+    const prompt = `このイシューの実装計画をレビューして、必要に応じて修正してください。issue_number:${issueNumber} タイトル:${issueTitle} 内容:${issueContent}`;
     return await this.executeClineCommand(prompt);
   }
 
   /**
    * 機能を実装
    * @param issueNumber イシュー番号
+   * @param issueTitle イシューのタイトル
    * @param issueContent イシューの内容
    * @returns 成功したかどうか
    */
-  private async implementFeature(issueNumber: string, issueContent: string): Promise<boolean> {
-    const prompt = `このイシューに記載された実装計画に従って、機能を実装してください。実装が完了したら、PRを作成してください。issue_number:${issueNumber} 内容:${issueContent}`;
+  private async implementFeature(issueNumber: string, issueTitle: string, issueContent: string): Promise<boolean> {
+    const prompt = `このイシューに記載された実装計画に従って、機能を実装してください。実装が完了したら、PRを作成してください。issue_number:${issueNumber} タイトル:${issueTitle} 内容:${issueContent}`;
     return await this.executeClineCommand(prompt);
   }
 
   /**
    * PRをレビュー
    * @param issueNumber イシュー番号
+   * @param issueTitle イシューのタイトル
    * @param issueContent イシューの内容
    * @returns 成功したかどうか
    */
-  private async reviewPullRequest(issueNumber: string, issueContent: string): Promise<boolean> {
-    const prompt = `このイシューに関連するPRをレビューして、必要に応じて修正してください。issue_number:${issueNumber} 内容:${issueContent}`;
+  private async reviewPullRequest(issueNumber: string, issueTitle: string, issueContent: string): Promise<boolean> {
+    const prompt = `このイシューに関連するPRをレビューして、必要に応じて修正してください。issue_number:${issueNumber} タイトル:${issueTitle} 内容:${issueContent}`;
     return await this.executeClineCommand(prompt);
   }
 }
