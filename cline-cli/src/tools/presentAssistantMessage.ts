@@ -1,7 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
 import path from "path"
 import { serializeError } from "serialize-error"
-import cloneDeep from "clone-deep"
 import { ToolParamName } from "../assistant-message/index.js"
 import { ask } from "../chat.js"
 import { globalStateManager } from "../globalState.js"
@@ -59,10 +58,6 @@ export const presentAssistantMessage = async () => {
 		state.presentAssistantMessageLocked = false
 		return
 	}
-
-	// ストリーミング中に配列が更新される可能性があるため、ディープコピーを作成
-	const block = cloneDeep(state.assistantMessageContent[state.currentStreamingContentIndex])
-	console.log("block", block)
 	for (const block of state.assistantMessageContent) {
 		// ブロックの種類に応じて処理を分岐
 		switch (block.type) {
