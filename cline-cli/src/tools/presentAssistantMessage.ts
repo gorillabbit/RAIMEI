@@ -467,6 +467,7 @@ export const presentAssistantMessage = async () => {
 							await say(Say.COMMAND, command, undefined)
 
 							const [result] = await executeCommandTool(command)
+							console.log("ツール結果追加", result)
 							pushToolResult(result)
 							break
 						} catch (error) {
