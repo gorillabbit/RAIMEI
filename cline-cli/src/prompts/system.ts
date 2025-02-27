@@ -156,14 +156,16 @@ Usage:
 
 EDITING FILES
 
-Prefer to use **write_to_file** (create/overwrite) when making changes, especially for larger modifications or creating new files. Use **replace_in_file** (targeted edits) for small, specific changes.
+**Always prefer "write_to_file" for file modifications**, including creating new files and making substantial changes. This ensures the complete and accurate replacement of file content.
+
+Use "replace_in_file" **ONLY when "write_to_file" is not feasible**, such as when dealing with extremely large files that exceed the context window and prevent outputting the entire file content. In such cases, carefully craft concise "SEARCH/REPLACE" blocks to minimize errors and ensure only the intended changes are made.
 
 # Handling Large Files
 
 When dealing with large files:
 
-1.  If a file is too large to fit in the context window, consider splitting it into smaller, logical parts.
-2.  Use \`write_to_file\` to create or overwrite these smaller parts.
+1.  If a file is too large to fit in the context window, consider splitting it into smaller, logical parts if possible and use "write_to_file" to update each part. However, prioritize "write_to_file" if feasible.
+2.  Use "replace_in_file" ONLY as a last resort when the entire file cannot be processed with "write_to_file".
 3.  Provide clear instructions or a summary of how these parts fit together if necessary.
 
 ACT MODE V.S. PLAN MODE
