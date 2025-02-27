@@ -113,8 +113,6 @@ const webhookHandler: FastifyPluginAsync = async (server: FastifyInstance) => {
           if (!issue) {
             return reply.status(400).send({ error: 'Missing issue data' });
           }
-          const issueContent = await getIssueContent(issue.html_url);
-          const issueNumber = extractLastNumber(issue.html_url) ?? 'なし(本文は空白)';
           if (action === 'opened') {
             console.log(`Issue created: title=${issue.title}, url=${issue.html_url}`);
             // 未着手ラベルを付与
