@@ -35,7 +35,7 @@ Parameters:
 *   **newlines**: Ensure newline characters are correctly formatted.
 
 ## execute_command
-Description: Execute a CLI command.
+Description: Execute a CLI command. Assume that the repository already has Git initialized.
 Parameters:
 - command: (required) The CLI command.
 Usage:
