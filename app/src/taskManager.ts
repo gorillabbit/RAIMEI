@@ -76,7 +76,7 @@ export class TaskManager {
           case 'RAIMEI イシューレビュー待ち':
             // イシューレビューが完了したら、実装中ラベルに変更
             await this.reviewIssueDescription(issueNumber, title, issueContent);
-            await this.labelManager.updateIssueLabel(issueUrl, 'RAIMEI 実装中');
+            await this.labelManager.updateIssueLabel(issueUrl, '人間 PRレビュー待ち');
             return true;
             
           case 'RAIMEI 実装中':
