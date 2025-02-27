@@ -55,7 +55,6 @@ export const editGitHubIssue = async (issue_number: number, newContent: string):
 		})
 
 		if (response.status === 200) {
-			console.log(`Issue ${issue_number} updated successfully.`)
 			return true
 		} else {
 			console.error(`Failed to update issue ${issue_number}. Status code: ${response.status}`)

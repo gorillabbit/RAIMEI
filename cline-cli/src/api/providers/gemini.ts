@@ -29,7 +29,6 @@ export class GeminiHandler implements ApiHandler {
 				temperature: 0,
 			},
 		})
-		console.log(content.response, content.response.text())
 		const response = content.response
 		return {
 			text: response.text(),

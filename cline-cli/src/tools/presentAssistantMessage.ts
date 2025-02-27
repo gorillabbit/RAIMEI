@@ -39,7 +39,6 @@ export const presentAssistantMessage = async () => {
 	}
 
 	if (state.taskCompleted) {
-		console.log("Task completed", state.taskCompleted)
 		return
 	}
 
@@ -467,7 +466,6 @@ export const presentAssistantMessage = async () => {
 							await say(Say.COMMAND, command, undefined)
 
 							const [result] = await executeCommandTool(command)
-							console.log("ツール結果追加", result)
 							pushToolResult(result)
 							break
 						} catch (error) {
@@ -527,7 +525,6 @@ export const presentAssistantMessage = async () => {
 						}
 					}
 					case "attempt_completion": {
-						console.log("block.params.result", block.params.result)
 						const result: string | undefined = block.params.result
 						const command: string | undefined = block.params.command
 

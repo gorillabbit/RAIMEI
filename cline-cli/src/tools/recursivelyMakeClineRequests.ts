@@ -84,7 +84,6 @@ export const processClineRequests = async (
 		if (state.abort) {
 			break
 		}
-		console.log("Task completed", state.taskCompleted)
 		if (state.taskCompleted) {
 			return true
 		}

@@ -109,17 +109,6 @@ export class AnthropicHandler implements ApiHandler {
 			}
 		}
 
-		// if (stream.content[0].type === "text") {
-		// 	return {
-		// 		text: stream.content[stream.content.length - 1]?.text,
-		// 		usage: {
-		// 			inputTokens: stream.usage.input_tokens || 0,
-		// 			outputTokens: stream.usage.output_tokens || 0,
-		// 		},
-		// 	}
-		// }
-		console.log("stream", stream)
-
 		const result = {
 			text: "ここはダミー。まだ修正ができてない。",
 			usage: {

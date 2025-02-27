@@ -119,8 +119,6 @@ export class OpenRouterHandler implements ApiHandler {
 			})
 
 			const generation = response.data?.data
-			console.log("OpenRouter generation details:", response.data)
-			console.log("レスポンス", streamResponse)
 			return {
 				text: streamResponse.choices[0].message.content || "",
 				usage: {
