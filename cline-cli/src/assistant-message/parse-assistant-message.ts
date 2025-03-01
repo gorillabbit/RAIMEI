@@ -1,5 +1,12 @@
-import { AssistantMessageContent, TextContent, ToolUse, ToolUseName, toolUseNames } from "./index.js"
-import { DOMParser } from "xmldom"
+import {
+	AssistantMessageContent,
+	TextContent,
+	ToolParamName,
+	toolParamNames,
+	ToolUse,
+	ToolUseName,
+	toolUseNames,
+} from "./index.js"
 
 /**
  * アシスタントからのメッセージ文字列を解析し、テキストコンテンツやツール利用指示などのブロックに分割します。
@@ -11,11 +18,13 @@ import { DOMParser } from "xmldom"
  */
 export const parseAssistantMessage = (input: string): AssistantMessageContent[] => {
 	const result: AssistantMessageContent[] = []
-	const xmlTagPattern = /<(\w+)>[\s\S]*?<\/\1>/g
+	const toolTagPattern = new RegExp(`<(${toolUseNames.join("|")})>([\\s\\S]*?)<\\/\\1>`, "g") // ToolUseName に含まれるタグのみを対象とする
+	const paramTagPattern = new RegExp(`<(${toolParamNames.join("|")})>([\\s\\S]*?)<\\/\\1>`, "g")
+
 	let lastIndex = 0
 
 	let match
-	while ((match = xmlTagPattern.exec(input)) !== null) {
+	while ((match = toolTagPattern.exec(input)) !== null) {
 		// XMLタグの前のテキスト部分を取得
 		if (match.index > lastIndex) {
 			const textPart = input.slice(lastIndex, match.index).trim()
@@ -25,38 +34,26 @@ export const parseAssistantMessage = (input: string): AssistantMessageContent[] 
 			}
 		}
 
-		// XMLタグ部分を処理
-		const xmlContent = match[0]
-		const parser = new DOMParser()
-		const xmlDoc = parser.parseFromString(xmlContent, "application/xml")
-		const rootNode = xmlDoc.documentElement
+		// ツール利用部分を処理
+		const toolName = match[1] as ToolUseName
+		const toolContent = match[2]
 
-		if (rootNode) {
-			const params: Partial<Record<string, string>> = {}
-			for (let i = 0; i < rootNode.childNodes.length; i++) {
-				const node = rootNode.childNodes[i]
-				if (node.nodeType === 1) {
-					// ELEMENT_NODE
-					params[node.nodeName] = node.textContent?.trim() || ""
-				}
-			}
-
-			const toolName = rootNode.nodeName as ToolUseName
-			if (toolUseNames.includes(toolName)) {
-				const toolUse: ToolUse = {
-					type: "tool_use",
-					name: toolName,
-					params,
-				}
-				result.push(toolUse)
-			} else {
-				// 未知のタグの場合はテキストとして扱う
-				const textContent: TextContent = { type: "text", content: xmlContent }
-				result.push(textContent)
-			}
+		const params: Partial<Record<ToolParamName, string>> = {}
+		let paramMatch
+		while ((paramMatch = paramTagPattern.exec(toolContent)) !== null) {
+			const paramName = paramMatch[1] as ToolParamName // ToolParamNameであると型アサート
+			params[paramName] = paramMatch[2].trim()
 		}
+		paramTagPattern.lastIndex = 0 // reset lastIndex for next tool tag
 
-		lastIndex = xmlTagPattern.lastIndex
+		const toolUse: ToolUse = {
+			type: "tool_use",
+			name: toolName,
+			params,
+		}
+		result.push(toolUse)
+
+		lastIndex = toolTagPattern.lastIndex
 	}
 
 	// 最後のXMLタグ以降のテキスト部分を取得

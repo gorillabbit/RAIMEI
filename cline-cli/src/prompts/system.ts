@@ -69,14 +69,8 @@ Your file content here
 Description: Replace sections of content in an existing file using SEARCH/REPLACE blocks.
 Parameters:
 - path: (required) The path of the file.
-- diff: (required) One or more SEARCH/REPLACE blocks:
-  \`\`\`
-  <<<<<<< SEARCH
-  [exact content to find]
-  =======
-  [new content to replace with]
-  >>>>>>> REPLACE
-  \`\`\`
+- search: (required) The content to find.
+- replace: (required) The content to replace with.
   Critical rules:
   1. SEARCH content must match EXACTLY.
   2. Only the first match occurrence will be replaced.
@@ -86,9 +80,8 @@ Parameters:
 Usage:
 <replace_in_file>
 <path>File path here</path>
-<diff>
-Search and replace blocks here
-</diff>
+<search>Content to find</search>
+<replace>Content to replace with</replace>
 </replace_in_file>
 
 ## search_files

@@ -18,12 +18,7 @@ const getGitInfo = async () => {
 	}
 }
 
-const runCommand = async (
-	command: string,
-	tempFilePath: string,
-	gitInfo: string,
-	cwd: string
-) => {
+const runCommand = async (command: string, tempFilePath: string, gitInfo: string, cwd: string) => {
 	try {
 		const logContent = `Command: ${command}\nGit Repository: ${gitInfo}\nCurrent Directory: ${cwd}\n\n`
 		await fs.writeFile(tempFilePath, logContent)
@@ -60,5 +55,4 @@ export const executeCommandTool = async (command: string): Promise<[ToolResponse
 	}
 
 	return [formatResponse.toolResult(output, undefined)]
-
 }

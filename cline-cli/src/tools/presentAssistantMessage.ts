@@ -1,7 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
 import path from "path"
 import { serializeError } from "serialize-error"
-import cloneDeep from "clone-deep"
 import { ToolParamName } from "../assistant-message/index.js"
 import { ask } from "../chat.js"
 import { globalStateManager } from "../globalState.js"
@@ -59,10 +58,6 @@ export const presentAssistantMessage = async () => {
 		state.presentAssistantMessageLocked = false
 		return
 	}
-
-	// ストリーミング中に配列が更新される可能性があるため、ディープコピーを作成
-	const block = cloneDeep(state.assistantMessageContent[state.currentStreamingContentIndex])
-	console.log("block", block)
 	for (const block of state.assistantMessageContent) {
 		// ブロックの種類に応じて処理を分岐
 		switch (block.type) {
@@ -221,8 +216,9 @@ export const presentAssistantMessage = async () => {
 					case "replace_in_file": {
 						const relPath: string | undefined = block.params.path
 						const content: string | undefined = block.params.content // write_to_file用
-						const diff: string | undefined = block.params.diff // replace_in_file用
-						if (!relPath || (!content && !diff)) {
+						const search: string | undefined = block.params.search // replace_in_file用 for search
+						const replace: string | undefined = block.params.replace // replace_in_file用 for replace
+						if (!relPath || (!content && !search && !replace)) {
 							// 空のファイルを作ることはできない
 							console.log("必要なパラメータが不足しているため、ツール処理を中断します。")
 							break
@@ -238,23 +234,23 @@ export const presentAssistantMessage = async () => {
 
 						try {
 							let newContent: string = ""
-							if (diff) {
+							if (search && replace) {
 								if (!genericDiffProvider.isEditing) {
 									await genericDiffProvider.open(relPath)
 								}
 
 								try {
 									newContent = await constructNewFileContent(
-										diff,
+										search,
+										replace,
 										genericDiffProvider.originalContent || "",
-										true,
 									)
 								} catch (error) {
 									await say(Say.DIFF_ERROR, relPath)
 									pushToolResult(
 										formatResponse.toolError(
 											`${(error as Error)?.message}\n\n` +
-												`This is likely because the SEARCH block content doesn't match exactly with what's in the file, or if you used multiple SEARCH/REPLACE blocks they may not have been in the order they appear in the file.\n\n` +
+												`This is likely because the search and replace block content doesn't match exactly with what's in the file, or if you used multiple SEARCH/REPLACE blocks they may not have been in the order they appear in the file.\n\n` +
 												`The file was reverted to its original state:\n\n` +
 												`<file_content path="${relPath.toPosix()}">\n${genericDiffProvider.originalContent}\n</file_content>\n\n` +
 												`Try again with a more precise SEARCH block.\n(If you keep running into this error, you may use the write_to_file tool as a workaround.)`,
@@ -282,7 +278,7 @@ export const presentAssistantMessage = async () => {
 							const sharedMessageProps: ClineSayTool = {
 								tool: fileExists ? "editedExistingFile" : "newFileCreated",
 								path: getReadablePath(state.workspaceFolder ?? "", removeClosingTag("path", relPath)),
-								content: diff || content,
+								content: (search && replace) || content,
 							}
 
 							if (!relPath) {
@@ -290,7 +286,7 @@ export const presentAssistantMessage = async () => {
 								pushToolResult(await sayAndCreateMissingParamError(block.name, "path"))
 								break
 							}
-							if (block.name === "replace_in_file" && !diff) {
+							if (block.name === "replace_in_file" && !(search || replace)) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("replace_in_file", "diff"))
 								break
@@ -311,7 +307,7 @@ export const presentAssistantMessage = async () => {
 
 							const completeMessage = JSON.stringify({
 								...sharedMessageProps,
-								content: diff || content,
+								content: (search ?? "") + (replace ?? "") || content,
 							} satisfies ClineSayTool)
 
 							removeLastPartialMessageIfExistsWithType(MessageType.ASK, Ask.TOOL)
@@ -366,7 +362,7 @@ export const presentAssistantMessage = async () => {
 							if (!relDirPath) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("list_files", "path"))
-								
+
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -457,7 +453,7 @@ export const presentAssistantMessage = async () => {
 							if (!command) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("execute_command", "command"))
-								
+
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -479,7 +475,7 @@ export const presentAssistantMessage = async () => {
 							if (!question) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("ask_followup_question", "question"))
-								
+
 								break
 							}
 							state.consecutiveMistakeCount = 0
@@ -487,11 +483,11 @@ export const presentAssistantMessage = async () => {
 							const { text, images } = await ask(Ask.FOLLOWUP, question)
 							await say(Say.USER_FEEDBACK, text ?? "", images)
 							pushToolResult(formatResponse.toolResult(`<answer>\n${text}\n</answer>`, images))
-							
+
 							break
 						} catch (error) {
 							await handleError("質問送信", error)
-							
+
 							break
 						}
 					}
@@ -550,7 +546,7 @@ export const presentAssistantMessage = async () => {
 							if (!result) {
 								state.consecutiveMistakeCount++
 								pushToolResult(await sayAndCreateMissingParamError("attempt_completion", "result"))
-								
+
 								break
 							}
 							state.consecutiveMistakeCount = 0
