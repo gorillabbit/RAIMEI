@@ -190,7 +190,7 @@ async function processApiStream(): Promise<{
 		tokenUsage.cacheWriteTokens += response.usage.cacheWriteTokens ?? 0
 		tokenUsage.cacheReadTokens += response.usage.cacheReadTokens ?? 0
 		assistantMessage = response.text
-		console.log("[processApiStream] APIリクエスト成功: レスポンス", response.text)
+		// console.log("[processApiStream] APIリクエスト成功: レスポンス", response.text)
 		state.assistantMessageContent = parseAssistantMessage(assistantMessage)
 		await presentAssistantMessage()
 	} catch (error) {

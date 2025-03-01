@@ -59,6 +59,7 @@ export const presentAssistantMessage = async () => {
 		return
 	}
 	for (const block of state.assistantMessageContent) {
+		console.log("Processing block", block)
 		// ブロックの種類に応じて処理を分岐
 		switch (block.type) {
 			case "text": {

@@ -40,7 +40,6 @@ const runCommand = async (command: string, tempFilePath: string, gitInfo: string
  * @returns {Promise<[boolean, ToolResponse]>} - ユーザーが拒否したフラグとツール応答を含むタプルに解決されるプロミス。
  */
 export const executeCommandTool = async (command: string): Promise<[ToolResponse]> => {
-	console.log("executeCommandTool started", { command }) // Log: Function execution start with command
 	const timestamp = Date.now()
 	const uuid = randomUUID()
 	const tempFilePath = `/tmp/cline-command-output-${timestamp}-${uuid}.log`
