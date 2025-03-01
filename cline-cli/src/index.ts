@@ -6,8 +6,8 @@ import { startTask } from "./lifecycle.js"
 import { initDB } from "./database.js"
 import { getConfig, setConfig } from "./utils/fs.js"
 import * as readline from "readline"
-import yargs from 'yargs';
-import fs from 'fs';
+import yargs from "yargs"
+import fs from "fs"
 
 const requireApiKey = async (config: ClineConfig, keyName: keyof ClineConfig) => {
 	if (!config[keyName]) {
@@ -34,25 +34,23 @@ async function main() {
 	const taskId = randomUUID()
 	await ensureTaskDirectoryExists(taskId)
 
-	const argv = await yargs(process.argv.slice(2))
-		.option('file', {
-			alias: 'f',
-			describe: 'Path to the prompt file',
-			type: 'string',
-		})
-		.argv;
+	const argv = await yargs(process.argv.slice(2)).option("file", {
+		alias: "f",
+		describe: "Path to the prompt file",
+		type: "string",
+	}).argv
 
 	// コマンドの引数から、指示と対象リポジトリパスを取得
-	const workspaceFolder = argv._[0] as string;
-    let instruction = argv._[1] as string;
+	const workspaceFolder = argv._[0] as string
+	let instruction = argv._[1] as string
 	globalStateManager.state.workspaceFolder = workspaceFolder
 
 	if (argv.file) {
 		try {
-			instruction = fs.readFileSync(argv.file, 'utf-8');
+			instruction = fs.readFileSync(argv.file, "utf-8")
 		} catch (error) {
-			console.error("Error reading prompt file:", error);
-			process.exit(1);
+			console.error("Error reading prompt file:", error)
+			process.exit(1)
 		}
 	}
 

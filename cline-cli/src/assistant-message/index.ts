@@ -33,7 +33,6 @@ export const toolParamNames = [
 	"requires_approval",
 	"path",
 	"content",
-	"diff",
 	"regex",
 	"file_pattern",
 	"recursive",
@@ -48,6 +47,8 @@ export const toolParamNames = [
 	"question",
 	"response",
 	"result",
+	"search",
+	"replace",
 ] as const
 
 export type ToolParamName = (typeof toolParamNames)[number]
@@ -77,7 +78,7 @@ export interface WriteToFileToolUse extends ToolUse {
 
 export interface ReplaceInFileToolUse extends ToolUse {
 	name: "replace_in_file"
-	params: Partial<Pick<Record<ToolParamName, string>, "path" | "diff">>
+	params: Partial<Pick<Record<ToolParamName, string>, "path" | "search" | "replace">>
 }
 
 export interface SearchFilesToolUse extends ToolUse {
